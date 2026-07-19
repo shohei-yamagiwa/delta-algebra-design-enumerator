@@ -65,7 +65,7 @@ public class Benchmark {
             List<int[]> tris = DesignSampler.remyTriangles(nU, DesignSampler.rngForSample(seed, i));
             List<int[]> diagonals = new ArrayList<>();
 
-            DesignSampler.diagonalCountAndEars(tris, nU + 2, diagonals);
+            TriangulationUtils.diagonalCountAndEars(tris, nU + 2, diagonals);
 
             StringBuilder sb = new StringBuilder();
             for (int[] diagonal : diagonals) {

@@ -3,42 +3,8 @@ package dev.shoheiyamagiwa.enumerator.benchmark;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.TreeSet;
 
 public class DesignSampler {
-    public static int[] diagonalCountAndEars(List<int[]> triangles, int k, List<int[]> diagonalsOut) {
-        TreeSet<long[]> diagonalSet = new TreeSet<>((x, y) -> x[0] != y[0] ? Long.compare(x[0], y[0]) : Long.compare(x[1], y[1]));
-        int ears = 0;
-
-        for (int[] triangle : triangles) {
-            int boundaries = 0;
-            int[][] edges = {{triangle[0], triangle[1]}, {triangle[1], triangle[2]}, {triangle[0], triangle[2]}};
-
-            for (int[] edge : edges) {
-                int a = Math.min(edge[0], edge[1]);
-                int c = Math.max(edge[0], edge[1]);
-
-                if (isBoundary(a, c, k)) {
-                    boundaries++;
-                } else {
-                    diagonalSet.add(new long[]{a, c});
-                }
-            }
-
-            if (boundaries >= 2) {
-                ears++;
-            }
-        }
-
-        if (diagonalsOut != null) {
-            for (long[] diagonal : diagonalSet) {
-                diagonalsOut.add(new int[]{(int) diagonal[0], (int) diagonal[1]});
-            }
-        }
-
-        return new int[]{diagonalSet.size(), ears};
-    }
-
     public static List<int[]> remyTriangles(int n, SplitMix64 random) {
         int NN = 2 * n + 1;
         int[] Lc = new int[NN];
@@ -146,7 +112,7 @@ public class DesignSampler {
     static int sampleViolations(int n, long globalSeed, long i) {
         SplitMix64 rng = rngForSample(globalSeed, i);
         List<int[]> tris = remyTriangles(n, rng);
-        int[] de = diagonalCountAndEars(tris, n + 2, null); // {#diagonals, ears}
+        int[] de = TriangulationUtils.diagonalCountAndEars(tris, n + 2, null); // {#diagonals, ears}
         int nd = de[0];
         int ears = de[1]; // nd == n-1
         int set = 0;
@@ -158,35 +124,6 @@ public class DesignSampler {
         return violationsFromParts(set, ears);
     }
 
-    public static List<List<int[]>> triFill(int[] v) {
-        int length = v.length;
-        List<List<int[]>> res = new ArrayList<>();
-
-        if (length < 3) {
-            res.add(new ArrayList<>());
-            return res;
-        }
-
-        int i = v[0], j = v[length - 1];
-
-        for (int a = 1; a < length - 1; a++) {
-            int[] triangle = {i, v[a], j};
-            int[] L = Arrays.copyOfRange(v, 0, a + 1);
-            int[] R = Arrays.copyOfRange(v, a, length);
-
-            for (List<int[]> lt : triFill(L)) {
-                for (List<int[]> rt : triFill(R)) {
-                    List<int[]> c = new ArrayList<>(lt);
-
-                    c.add(triangle);
-                    c.addAll(rt);
-                    res.add(c);
-                }
-            }
-        }
-        return res;
-    }
-
     public static long[] exact(int n) {
         int k = n + 2;
         int[] v = new int[k];
@@ -195,13 +132,13 @@ public class DesignSampler {
             v[x] = x;
         }
 
-        List<List<int[]>> all = triFill(v);
+        List<List<int[]>> all = TriangulationUtils.triFill(v);
         long dir = 1L << (n - 1);
         int minV = Integer.MAX_VALUE;
         long sat = 0;
 
         for (List<int[]> tris : all) {
-            int ears = diagonalCountAndEars(tris, k, null)[1];
+            int ears = TriangulationUtils.diagonalCountAndEars(tris, k, null)[1];
 
             for (long m = 0; m < dir; m++) {
                 int viol = Long.bitCount(m) + (ears - 2);
@@ -215,9 +152,5 @@ public class DesignSampler {
             }
         }
         return new long[]{minV, sat, (long) all.size() * dir};
-    }
-
-    public static boolean isBoundary(int a, int c, int k) {
-        return (c - a == 1) || (a == 0 && c == k - 1);
     }
 }
