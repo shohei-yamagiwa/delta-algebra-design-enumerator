@@ -1,12 +1,16 @@
 package dev.shoheiyamagiwa.enumerator.benchmark;
 
+import dev.shoheiyamagiwa.enumerator.core.DesignEnumerator;
+import dev.shoheiyamagiwa.enumerator.core.DesignEvaluator;
+import dev.shoheiyamagiwa.enumerator.core.Result;
+import dev.shoheiyamagiwa.enumerator.core.TriangulationUtils;
 import dev.shoheiyamagiwa.enumerator.model.Polygon;
 import dev.shoheiyamagiwa.enumerator.model.RefEdge;
 import dev.shoheiyamagiwa.enumerator.model.Triangulation;
 
 import java.util.*;
 
-import static dev.shoheiyamagiwa.enumerator.benchmark.DesignEnumerator.triangulations;
+import static dev.shoheiyamagiwa.enumerator.core.DesignEnumerator.triangulations;
 
 public class Benchmark {
     static void main() {

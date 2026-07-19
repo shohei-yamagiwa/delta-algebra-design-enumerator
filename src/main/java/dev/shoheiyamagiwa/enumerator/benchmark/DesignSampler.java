@@ -1,5 +1,8 @@
 package dev.shoheiyamagiwa.enumerator.benchmark;
 
+import dev.shoheiyamagiwa.enumerator.core.DesignEvaluator;
+import dev.shoheiyamagiwa.enumerator.core.TriangulationUtils;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;

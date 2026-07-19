@@ -1,4 +1,4 @@
-package dev.shoheiyamagiwa.enumerator.benchmark;
+package dev.shoheiyamagiwa.enumerator.core;
 
 import dev.shoheiyamagiwa.enumerator.model.Polygon;
 import dev.shoheiyamagiwa.enumerator.model.Triangulation;

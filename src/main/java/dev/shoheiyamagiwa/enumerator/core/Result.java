@@ -1,4 +1,4 @@
-package dev.shoheiyamagiwa.enumerator.benchmark;
+package dev.shoheiyamagiwa.enumerator.core;
 
 public class Result {
     private final long N;

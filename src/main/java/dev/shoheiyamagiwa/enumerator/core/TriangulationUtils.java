@@ -1,4 +1,4 @@
-package dev.shoheiyamagiwa.enumerator.benchmark;
+package dev.shoheiyamagiwa.enumerator.core;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -6,8 +6,9 @@ import java.util.List;
 import java.util.TreeSet;
 
 /**
- * Shared triangulation utilities used by both {@link DesignEnumerator} and {@link DesignSampler}:
- * recursive triangulation enumeration, boundary-edge detection, and diagonal/ear extraction.
+ * Shared triangulation utilities used by both {@link DesignEnumerator} and
+ * {@code dev.shoheiyamagiwa.enumerator.benchmark.DesignSampler}: recursive triangulation
+ * enumeration, boundary-edge detection, and diagonal/ear extraction.
  * Consolidating this logic here avoids the two classes drifting apart when one of them is changed.
  */
 public final class TriangulationUtils {
