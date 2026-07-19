@@ -9,12 +9,6 @@ import java.util.*;
 import static dev.shoheiyamagiwa.enumerator.benchmark.DesignEnumerator.triangulations;
 
 public class Benchmark {
-    private static final DesignEvaluator PLACEHOLDER = (p, tri, m) -> {
-        int nDiag = tri.getDiagonals().length;
-        long mask = (nDiag == 64) ? -1L : ((1L << nDiag) - 1);
-        return Long.bitCount(m & mask) + (tri.getEars() - 2);
-    };
-
     static void main() {
         // (1) sanity: triangulation count must equal Catalan(n)
         System.out.println("== triangulation count vs Catalan ==");
@@ -35,7 +29,7 @@ public class Benchmark {
 
         for (int t = 0; t < ct.size(); t++) {
             for (long m = 0; m < dir; m++) {
-                int v = PLACEHOLDER.violations(clockApp, ct.get(t), m);
+                int v = DesignEvaluator.STANDARD.violations(clockApp, ct.get(t), m);
 
                 System.out.printf("  id=%d  t=%d (ears=%d, diagonals=%s)  m=%d  violations=%d  %s%n", t * dir + m, t, ct.get(t).getEars(), Arrays.deepToString(ct.get(t).getDiagonals()), m, v, v == 0 ? "<- Demeter-satisfying" : "");
             }
@@ -47,7 +41,7 @@ public class Benchmark {
 
         for (int n = 4; n <= 12; n++) {
             Polygon p = syntheticGon(n);
-            Result r = DesignEnumerator.enumerate(p, PLACEHOLDER);
+            Result r = DesignEnumerator.enumerate(p, DesignEvaluator.STANDARD);
 
             System.out.printf("%-4d %-16d %-10.1f %-8d %-14.3e%n", n, r.getN(), r.getMs(), r.getMinViol(), r.getN() / (r.getMs() / 1000.0));
         }

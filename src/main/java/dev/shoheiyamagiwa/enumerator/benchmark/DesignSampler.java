@@ -106,7 +106,7 @@ public class DesignSampler {
     }
 
     static int violationsFromParts(int setDirBits, int ears) {
-        return setDirBits + (ears - 2);
+        return DesignEvaluator.violations(setDirBits, ears);
     }
 
     static int sampleViolations(int n, long globalSeed, long i) {
@@ -141,7 +141,7 @@ public class DesignSampler {
             int ears = TriangulationUtils.diagonalCountAndEars(tris, k, null)[1];
 
             for (long m = 0; m < dir; m++) {
-                int viol = Long.bitCount(m) + (ears - 2);
+                int viol = DesignEvaluator.violations(Long.bitCount(m), ears);
 
                 if (viol < minV) {
                     minV = viol;
