@@ -1,0 +1,44 @@
+#version 450
+
+// SplitMix64 の mix64 を GPU 上で再現する最小 compute カーネル。
+// 各スレッドが自分のグローバル呼び出し番号 index を種にして
+//     result = mix64(seed ^ mix64(index))
+// を計算し、出力バッファへ書き戻す。CPU 側の SplitMix64.mix64 と全要素一致することを検証する。
+//
+// 64bit 整数演算を使うため GL_ARB_gpu_shader_int64 を要求する
+// （Adreno X1-85 は shaderInt64 = true を実機確認済み）。
+#extension GL_ARB_gpu_shader_int64 : require
+
+// 1 ワークグループあたりのスレッド数。ディスパッチ側の group 数と掛けて総スレッド数になる。
+layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+
+// 出力バッファ（binding = 0）。CPU から読み戻して検証する。
+layout(std430, binding = 0) buffer ResultBuffer {
+    uint64_t results[];
+};
+
+// カーネルに渡す定数。要素数と種を push constant で受け取る。
+layout(push_constant) uniform Parameters {
+    uint elementCount;
+    uint64_t seed;
+} parameters;
+
+// SplitMix64 の mix64。CPU 側 (SplitMix64.mix64) とビット単位で一致させること。
+uint64_t mix64(uint64_t value) {
+    value = (value ^ (value >> 30)) * 0xbf58476d1ce4e5b9UL;
+    value = (value ^ (value >> 27)) * 0x94d049bb133111ebUL;
+    return value ^ (value >> 31);
+}
+
+void main() {
+    uint index = gl_GlobalInvocationID.x;
+
+    // 総スレッド数は elementCount を local_size で切り上げた値なので、末尾の余剰スレッドを弾く。
+    if (index >= parameters.elementCount) {
+        return;
+    }
+
+    uint64_t indexAsUint64 = uint64_t(index);
+
+    results[index] = mix64(parameters.seed ^ mix64(indexAsUint64));
+}
