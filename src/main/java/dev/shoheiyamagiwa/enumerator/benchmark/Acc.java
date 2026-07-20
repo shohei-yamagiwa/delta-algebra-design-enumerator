@@ -1,11 +1,11 @@
 package dev.shoheiyamagiwa.enumerator.benchmark;
 
 public final class Acc {
-    public static final int HCAP = 256;
+    public static final int HISTOGRAM_CAPACITY = 256;
 
-    int best = Integer.MAX_VALUE;
+    int bestViolationCount = Integer.MAX_VALUE;
 
-    long sat = 0;
+    long satisfyingCount = 0;
 
-    long[] hist = new long[HCAP];
+    long[] violationHistogram = new long[HISTOGRAM_CAPACITY];
 }

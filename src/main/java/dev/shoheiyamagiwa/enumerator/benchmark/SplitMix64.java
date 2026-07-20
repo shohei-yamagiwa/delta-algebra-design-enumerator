@@ -20,9 +20,9 @@ public class SplitMix64 {
         return (nextLong() & 1L) != 0;
     }
 
-    public static long mix64(long z) {
-        z = (z ^ (z >>> 30)) * 0xbf58476d1ce4e5b9L;
-        z = (z ^ (z >>> 27)) * 0x94d049bb133111ebL;
-        return z ^ (z >>> 31);
+    public static long mix64(long value) {
+        value = (value ^ (value >>> 30)) * 0xbf58476d1ce4e5b9L;
+        value = (value ^ (value >>> 27)) * 0x94d049bb133111ebL;
+        return value ^ (value >>> 31);
     }
 }

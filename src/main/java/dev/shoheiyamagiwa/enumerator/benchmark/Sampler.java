@@ -14,109 +14,114 @@ import dev.shoheiyamagiwa.enumerator.core.TriangulationUtils;
  * to {@link SplitMix64#mix64} and {@link TriangulationUtils#isBoundary} respectively.
  */
 public class Sampler {
-    private static final long GAMMA = 0x9E3779B97F4A7C15L;
+    private static final long GAMMA_INCREMENT = 0x9E3779B97F4A7C15L;
 
-    private final int[] Lc, Rc, par, side, list, leaves;
+    private final int[] leftChild;
+    private final int[] rightChild;
+    private final int[] parent;
+    private final int[] childSide;
+    private final int[] activeNodes;
+    private final int[] leafCounts;
     private final boolean[] internal;
     private int earCount;
 
-    public Sampler(int maxN) {
-        int NN = 2 * maxN + 1;
+    public Sampler(int maxDeltaCount) {
+        int maxNodeCount = 2 * maxDeltaCount + 1;
 
-        Lc = new int[NN];
-        Rc = new int[NN];
-        par = new int[NN];
-        side = new int[NN];
-        list = new int[NN];
-        leaves = new int[NN];
-        internal = new boolean[NN];
+        leftChild = new int[maxNodeCount];
+        rightChild = new int[maxNodeCount];
+        parent = new int[maxNodeCount];
+        childSide = new int[maxNodeCount];
+        activeNodes = new int[maxNodeCount];
+        leafCounts = new int[maxNodeCount];
+        internal = new boolean[maxNodeCount];
     }
 
     /**
-     * violations for sample i — no heap allocation. RNG draw order matches DeltaSampler.
+     * violations for sample sampleIndex — no heap allocation. RNG draw order matches DeltaSampler.
      */
-    public int eval(int n, long seed, long i) {
-        long s = SplitMix64.mix64(seed ^ SplitMix64.mix64(i)); // counter-based per-sample state
-        int NN = 2 * n + 1;
+    public int eval(int deltaCount, long seed, long sampleIndex) {
+        long state = SplitMix64.mix64(seed ^ SplitMix64.mix64(sampleIndex)); // counter-based per-sample state
+        int nodeCount = 2 * deltaCount + 1;
 
-        for (int x = 0; x < NN; x++) {
-            Lc[x] = -1;
-            Rc[x] = -1;
-            par[x] = -1;
-            side[x] = -1;
-            internal[x] = false;
+        for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++) {
+            leftChild[nodeIndex] = -1;
+            rightChild[nodeIndex] = -1;
+            parent[nodeIndex] = -1;
+            childSide[nodeIndex] = -1;
+            internal[nodeIndex] = false;
         }
 
-        int cnt = 0, root = 0;
+        int activeNodeCount = 0, root = 0;
 
-        list[cnt++] = 0;
+        activeNodes[activeNodeCount++] = 0;
 
-        for (int k = 1; k <= n; k++) {
-            int intn = 2 * k - 1, leaf = 2 * k;
+        for (int step = 1; step <= deltaCount; step++) {
+            int internalNode = 2 * step - 1, newLeaf = 2 * step;
 
-            s += GAMMA;
+            state += GAMMA_INCREMENT;
 
-            long r1 = SplitMix64.mix64(s);
-            int pick = Math.floorMod(r1, 2 * k - 1);
+            long pickRandomBits = SplitMix64.mix64(state);
+            int pickedIndex = Math.floorMod(pickRandomBits, 2 * step - 1);
 
-            s += GAMMA;
+            state += GAMMA_INCREMENT;
 
-            long r2 = SplitMix64.mix64(s);
-            int b = (int) (r2 & 1L);
-            int iN = list[pick];
-            int p = par[iN], ps = side[iN];
+            long sideRandomBits = SplitMix64.mix64(state);
+            int chosenSide = (int) (sideRandomBits & 1L);
+            int pickedNode = activeNodes[pickedIndex];
+            int parentNode = parent[pickedNode], parentSide = childSide[pickedNode];
 
-            par[intn] = p;
-            side[intn] = ps;
-            internal[intn] = true;
+            parent[internalNode] = parentNode;
+            childSide[internalNode] = parentSide;
+            internal[internalNode] = true;
 
-            if (p == -1) {
-                root = intn;
+            if (parentNode == -1) {
+                root = internalNode;
             } else {
-                if (ps == 0) {
-                    Lc[p] = intn;
+                if (parentSide == 0) {
+                    leftChild[parentNode] = internalNode;
                 } else {
-                    Rc[p] = intn;
+                    rightChild[parentNode] = internalNode;
                 }
             }
 
-            if (b == 0) {
-                Lc[intn] = iN;
-                par[iN] = intn;
-                side[iN] = 0;
-                Rc[intn] = leaf;
-                par[leaf] = intn;
-                side[leaf] = 1;
+            if (chosenSide == 0) {
+                leftChild[internalNode] = pickedNode;
+                parent[pickedNode] = internalNode;
+                childSide[pickedNode] = 0;
+                rightChild[internalNode] = newLeaf;
+                parent[newLeaf] = internalNode;
+                childSide[newLeaf] = 1;
             } else {
-                Lc[intn] = leaf;
-                par[leaf] = intn;
-                side[leaf] = 0;
-                Rc[intn] = iN;
-                par[iN] = intn;
-                side[iN] = 1;
+                leftChild[internalNode] = newLeaf;
+                parent[newLeaf] = internalNode;
+                childSide[newLeaf] = 0;
+                rightChild[internalNode] = pickedNode;
+                parent[pickedNode] = internalNode;
+                childSide[pickedNode] = 1;
             }
 
-            list[cnt++] = intn;
-            list[cnt++] = leaf;
+            activeNodes[activeNodeCount++] = internalNode;
+            activeNodes[activeNodeCount++] = newLeaf;
         }
 
         leafCount(root);
         earCount = 0;
-        countEars(root, 0, n + 1, n + 2);
+        countEars(root, 0, deltaCount + 1, deltaCount + 2);
 
-        int ears = earCount, nd = n - 1, set = 0;
+        int ears = earCount, diagonalCount = deltaCount - 1, setDirectionBits = 0;
 
-        for (int d = 0; d < nd; d++) {
-            s += GAMMA;
+        for (int diagonalIndex = 0; diagonalIndex < diagonalCount; diagonalIndex++) {
+            state += GAMMA_INCREMENT;
 
-            long r = SplitMix64.mix64(s);
+            long directionRandomBits = SplitMix64.mix64(state);
 
-            if ((r & 1L) != 0) {
-                set++;
+            if ((directionRandomBits & 1L) != 0) {
+                setDirectionBits++;
             }
         }
 
-        return DesignEvaluator.violations(set, ears);
+        return DesignEvaluator.violations(setDirectionBits, ears);
     }
 
     int leafCount(int node) {
@@ -125,48 +130,48 @@ public class Sampler {
         }
 
         if (!internal[node]) {
-            leaves[node] = 1;
+            leafCounts[node] = 1;
             return 1;
         }
 
-        int c = leafCount(Lc[node]) + leafCount(Rc[node]);
+        int count = leafCount(leftChild[node]) + leafCount(rightChild[node]);
 
-        leaves[node] = c;
+        leafCounts[node] = count;
 
-        return c;
+        return count;
     }
 
     /**
-     * @param node the subtree whose triangles are counted
-     * @param lo   the first vertex of the arc this subtree spans
-     * @param hi   the last vertex of the arc this subtree spans
-     * @param k    the size of the *whole* polygon (n+2), not of the local arc: the boundary test has
-     *             to recognise the closing edge (0, k-1), which a local arc cannot tell apart from a
-     *             diagonal
+     * @param node        the subtree whose triangles are counted
+     * @param arcStart    the first vertex of the arc this subtree spans
+     * @param arcEnd      the last vertex of the arc this subtree spans
+     * @param vertexCount the size of the *whole* polygon (deltaCount+2), not of the local arc: the
+     *                    boundary test has to recognise the closing edge (0, vertexCount-1), which a
+     *                    local arc cannot tell apart from a diagonal
      */
-    void countEars(int node, int lo, int hi, int k) {
+    void countEars(int node, int arcStart, int arcEnd, int vertexCount) {
         if (node == -1 || !internal[node]) {
             return;
         }
 
-        int mid = lo + leaves[Lc[node]];
-        int b = 0;
+        int arcMid = arcStart + leafCounts[leftChild[node]];
+        int boundaryEdgeCount = 0;
 
-        if (TriangulationUtils.isBoundary(lo, mid, k)) {
-            b++;
+        if (TriangulationUtils.isBoundary(arcStart, arcMid, vertexCount)) {
+            boundaryEdgeCount++;
         }
-        if (TriangulationUtils.isBoundary(mid, hi, k)) {
-            b++;
+        if (TriangulationUtils.isBoundary(arcMid, arcEnd, vertexCount)) {
+            boundaryEdgeCount++;
         }
-        if (TriangulationUtils.isBoundary(lo, hi, k)) {
-            b++;
+        if (TriangulationUtils.isBoundary(arcStart, arcEnd, vertexCount)) {
+            boundaryEdgeCount++;
         }
 
-        if (b >= 2) {
+        if (boundaryEdgeCount >= 2) {
             earCount++;
         }
 
-        countEars(Lc[node], lo, mid, k);
-        countEars(Rc[node], mid, hi, k);
+        countEars(leftChild[node], arcStart, arcMid, vertexCount);
+        countEars(rightChild[node], arcMid, arcEnd, vertexCount);
     }
 }

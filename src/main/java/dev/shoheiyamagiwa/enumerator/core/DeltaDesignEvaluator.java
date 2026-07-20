@@ -70,9 +70,9 @@ public class DeltaDesignEvaluator {
      * @return the use reference the call is made on
      */
     private static Reference receiverRef(PrimitiveDelta delta) {
-        Iterator<Reference> it = delta.useRefs().iterator();
-        Reference first = it.next();
-        Reference second = it.next();
+        Iterator<Reference> useRefsIterator = delta.useRefs().iterator();
+        Reference first = useRefsIterator.next();
+        Reference second = useRefsIterator.next();
         Reference defRef = delta.defRef();
 
         if (first.getSource().equals(defRef.getSource()) && second.getSource().equals(first.getTarget())) {

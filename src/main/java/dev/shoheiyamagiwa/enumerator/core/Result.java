@@ -1,34 +1,34 @@
 package dev.shoheiyamagiwa.enumerator.core;
 
 public class Result {
-    private final long N;
+    private final long totalDesignCount;
 
-    private final int minViol;
+    private final int minViolations;
 
-    private final long satCount;
+    private final long satisfyingDesignCount;
 
-    private final double ms;
+    private final double elapsedMillis;
 
-    public Result(long N, int minViol, long satCount, double ms) {
-        this.N = N;
-        this.minViol = minViol;
-        this.satCount = satCount;
-        this.ms = ms;
+    public Result(long totalDesignCount, int minViolations, long satisfyingDesignCount, double elapsedMillis) {
+        this.totalDesignCount = totalDesignCount;
+        this.minViolations = minViolations;
+        this.satisfyingDesignCount = satisfyingDesignCount;
+        this.elapsedMillis = elapsedMillis;
     }
 
-    public long getN() {
-        return N;
+    public long getTotalDesignCount() {
+        return totalDesignCount;
     }
 
-    public int getMinViol() {
-        return minViol;
+    public int getMinViolations() {
+        return minViolations;
     }
 
-    public long getSatCount() {
-        return satCount;
+    public long getSatisfyingDesignCount() {
+        return satisfyingDesignCount;
     }
 
-    public double getMs() {
-        return ms;
+    public double getElapsedMillis() {
+        return elapsedMillis;
     }
 }

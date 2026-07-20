@@ -25,12 +25,12 @@ public class FastPathEquivalenceTest {
     @Test
     @DisplayName("ゼロアロケーションの Sampler が遅い基準の DesignSampler と標本ごとに一致する")
     public void samplerMatchesDesignSamplerPerSample() {
-        for (int n = 2; n <= 12; n++) {
-            Sampler sampler = new Sampler(n);
+        for (int deltaCount = 2; deltaCount <= 12; deltaCount++) {
+            Sampler sampler = new Sampler(deltaCount);
 
-            for (long i = 0; i < 200; i++) {
-                assertEquals(DesignSampler.sampleViolations(n, SEED, i), sampler.eval(n, SEED, i),
-                        "n=" + n + " sample=" + i);
+            for (long sampleIndex = 0; sampleIndex < 200; sampleIndex++) {
+                assertEquals(DesignSampler.sampleViolations(deltaCount, SEED, sampleIndex), sampler.eval(deltaCount, SEED, sampleIndex),
+                        "n=" + deltaCount + " sample=" + sampleIndex);
             }
         }
     }
@@ -38,63 +38,63 @@ public class FastPathEquivalenceTest {
     @Test
     @DisplayName("マルチコア実行が直列実行と完全に一致する")
     public void parallelMatchesSerial() throws Exception {
-        int n = 20;
-        long samples = 50_000;
-        Acc serial = DeltaParallel.serial(n, SEED, samples);
+        int deltaCount = 20;
+        long sampleCount = 50_000;
+        Acc serialResult = DeltaParallel.serial(deltaCount, SEED, sampleCount);
 
-        for (int threads : new int[]{2, 3, 4, 8}) {
-            Acc parallel = DeltaParallel.parallel(n, SEED, samples, threads);
+        for (int threadCount : new int[]{2, 3, 4, 8}) {
+            Acc parallelResult = DeltaParallel.parallel(deltaCount, SEED, sampleCount, threadCount);
 
-            assertEquals(serial.best, parallel.best, "best (threads=" + threads + ")");
-            assertEquals(serial.sat, parallel.sat, "sat (threads=" + threads + ")");
-            assertArrayEquals(serial.hist, parallel.hist, "hist (threads=" + threads + ")");
+            assertEquals(serialResult.bestViolationCount, parallelResult.bestViolationCount, "best (threads=" + threadCount + ")");
+            assertEquals(serialResult.satisfyingCount, parallelResult.satisfyingCount, "sat (threads=" + threadCount + ")");
+            assertArrayEquals(serialResult.violationHistogram, parallelResult.violationHistogram, "hist (threads=" + threadCount + ")");
         }
     }
 
     @Test
     @DisplayName("標本数がスレッド数で割り切れなくても直列実行と一致する")
     public void parallelMatchesSerialOnUnevenChunks() throws Exception {
-        int n = 8;
-        long samples = 9_973; // prime: never divides evenly by the thread counts below
-        Acc serial = DeltaParallel.serial(n, SEED, samples);
+        int deltaCount = 8;
+        long sampleCount = 9_973; // prime: never divides evenly by the thread counts below
+        Acc serialResult = DeltaParallel.serial(deltaCount, SEED, sampleCount);
 
-        for (int threads : new int[]{3, 7, 12}) {
-            Acc parallel = DeltaParallel.parallel(n, SEED, samples, threads);
+        for (int threadCount : new int[]{3, 7, 12}) {
+            Acc parallelResult = DeltaParallel.parallel(deltaCount, SEED, sampleCount, threadCount);
 
-            assertEquals(serial.sat, parallel.sat, "sat (threads=" + threads + ")");
-            assertArrayEquals(serial.hist, parallel.hist, "hist (threads=" + threads + ")");
-            assertEquals(samples, Arrays.stream(parallel.hist).sum(), "every sample counted exactly once");
+            assertEquals(serialResult.satisfyingCount, parallelResult.satisfyingCount, "sat (threads=" + threadCount + ")");
+            assertArrayEquals(serialResult.violationHistogram, parallelResult.violationHistogram, "hist (threads=" + threadCount + ")");
+            assertEquals(sampleCount, Arrays.stream(parallelResult.violationHistogram).sum(), "every sample counted exactly once");
         }
     }
 
     @Test
     @DisplayName("二つの独立な全列挙実装が同じ厳密解を返す")
     public void bothExactEnumerationsAgree() {
-        for (int n = 2; n <= 8; n++) {
-            long[] expected = DesignSampler.exact(n); // {minViolations, satisfying, total}
-            Result actual = DesignEnumerator.enumerate(polygonOf(n), DesignEvaluator.STANDARD);
+        for (int deltaCount = 2; deltaCount <= 8; deltaCount++) {
+            long[] expected = DesignSampler.exact(deltaCount); // {minViolations, satisfying, total}
+            Result actual = DesignEnumerator.enumerate(polygonOf(deltaCount), DesignEvaluator.STANDARD);
 
-            assertEquals(expected[2], actual.getN(), "total designs (n=" + n + ")");
-            assertEquals(expected[0], actual.getMinViol(), "min violations (n=" + n + ")");
-            assertEquals(expected[1], actual.getSatCount(), "satisfying designs (n=" + n + ")");
+            assertEquals(expected[2], actual.getTotalDesignCount(), "total designs (n=" + deltaCount + ")");
+            assertEquals(expected[0], actual.getMinViolations(), "min violations (n=" + deltaCount + ")");
+            assertEquals(expected[1], actual.getSatisfyingDesignCount(), "satisfying designs (n=" + deltaCount + ")");
         }
     }
 
     /**
-     * Builds a boundary polygon for {@code n} primitive deltas. The standard evaluator is
+     * Builds a boundary polygon for {@code deltaCount} primitive deltas. The standard evaluator is
      * structure-only, so the edge names and reference types carry no meaning here.
      *
-     * @param n the number of primitive deltas, i.e. the polygon has {@code n + 2} vertices
-     * @return a polygon on {@code n + 2} vertices with a field reference along each boundary edge
+     * @param deltaCount the number of primitive deltas, i.e. the polygon has {@code deltaCount + 2} vertices
+     * @return a polygon on {@code deltaCount + 2} vertices with a field reference along each boundary edge
      */
-    private static Polygon polygonOf(int n) {
-        int k = n + 2;
-        String[] classNames = new String[k];
-        RefEdge[] boundary = new RefEdge[k];
+    private static Polygon polygonOf(int deltaCount) {
+        int vertexCount = deltaCount + 2;
+        String[] classNames = new String[vertexCount];
+        RefEdge[] boundary = new RefEdge[vertexCount];
 
-        for (int v = 0; v < k; v++) {
-            classNames[v] = "C" + v;
-            boundary[v] = new RefEdge("r" + v, v, (v + 1) % k, true);
+        for (int vertexIndex = 0; vertexIndex < vertexCount; vertexIndex++) {
+            classNames[vertexIndex] = "C" + vertexIndex;
+            boundary[vertexIndex] = new RefEdge("r" + vertexIndex, vertexIndex, (vertexIndex + 1) % vertexCount, true);
         }
 
         return new Polygon(classNames, boundary);

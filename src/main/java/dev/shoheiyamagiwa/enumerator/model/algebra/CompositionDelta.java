@@ -221,25 +221,25 @@ public class CompositionDelta implements Delta {
 
     @Override
     public String toString() {
-        StringBuilder s = new StringBuilder();
+        StringBuilder builder = new StringBuilder();
 
-        s.append("UsedRef = [");
+        builder.append("UsedRef = [");
         for (Reference useRef : useRefs) {
-            s.append(useRef).append(", ");
+            builder.append(useRef).append(", ");
         }
-        s.append("]").append(System.lineSeparator());
+        builder.append("]").append(System.lineSeparator());
 
-        s.append("SharedRef = [");
+        builder.append("SharedRef = [");
         for (Reference sharedRef : sharedRefs) {
-            s.append(sharedRef).append(", ");
+            builder.append(sharedRef).append(", ");
         }
-        s.append("]").append(System.lineSeparator());
+        builder.append("]").append(System.lineSeparator());
 
-        s.append("DefinedRef = ");
-        s.append(defRef);
-        s.append(System.lineSeparator());
+        builder.append("DefinedRef = ");
+        builder.append(defRef);
+        builder.append(System.lineSeparator());
 
-        return s.toString();
+        return builder.toString();
     }
 
     @Override

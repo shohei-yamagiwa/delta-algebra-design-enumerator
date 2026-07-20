@@ -34,11 +34,12 @@ public class TriangulationSanityChecks {
     private static void checkCatalanCounts() {
         System.out.println("== triangulation count vs Catalan ==");
 
-        for (int k = 3; k <= 10; k++) {
-            int n = k - 2;
-            long got = triangulations(k).size();
+        for (int vertexCount = 3; vertexCount <= 10; vertexCount++) {
+            int deltaCount = vertexCount - 2;
+            long triangulationCount = triangulations(vertexCount).size();
 
-            System.out.printf("k=%2d (n=%2d): triangulations=%-8d catalan=%-8d %s%n", k, n, got, catalan(n), got == catalan(n) ? "OK" : "FAIL");
+            System.out.printf("k=%2d (n=%2d): triangulations=%-8d catalan=%-8d %s%n", vertexCount, deltaCount,
+                    triangulationCount, catalan(deltaCount), triangulationCount == catalan(deltaCount) ? "OK" : "FAIL");
         }
     }
 
@@ -50,14 +51,18 @@ public class TriangulationSanityChecks {
         System.out.println("\n== clock app (n=2): all designs ==");
 
         Polygon clockApp = clockApp();
-        List<Triangulation> ct = triangulations(clockApp.vertices());
-        long dir = 1L << (clockApp.deltas() - 1);
+        List<Triangulation> clockAppTriangulations = triangulations(clockApp.vertices());
+        long directionCombinationCount = 1L << (clockApp.deltas() - 1);
 
-        for (int t = 0; t < ct.size(); t++) {
-            for (long m = 0; m < dir; m++) {
-                int v = DesignEvaluator.STANDARD.violations(clockApp, ct.get(t), m);
+        for (int triangulationIndex = 0; triangulationIndex < clockAppTriangulations.size(); triangulationIndex++) {
+            for (long directionBits = 0; directionBits < directionCombinationCount; directionBits++) {
+                Triangulation triangulation = clockAppTriangulations.get(triangulationIndex);
+                int violations = DesignEvaluator.STANDARD.violations(clockApp, triangulation, directionBits);
+                long designId = triangulationIndex * directionCombinationCount + directionBits;
 
-                System.out.printf("  id=%d  t=%d (ears=%d, diagonals=%s)  m=%d  violations=%d  %s%n", t * dir + m, t, ct.get(t).getEars(), Arrays.deepToString(ct.get(t).getDiagonals()), m, v, v == 0 ? "<- Demeter-satisfying" : "");
+                System.out.printf("  id=%d  t=%d (ears=%d, diagonals=%s)  m=%d  violations=%d  %s%n", designId,
+                        triangulationIndex, triangulation.getEars(), Arrays.deepToString(triangulation.getDiagonals()),
+                        directionBits, violations, violations == 0 ? "<- Demeter-satisfying" : "");
             }
         }
     }
@@ -70,11 +75,13 @@ public class TriangulationSanityChecks {
         System.out.println("\n== single-core scaling baseline ==");
         System.out.printf("%-4s %-16s %-10s %-8s %-14s%n", "n", "N", "time(ms)", "minV", "designs/sec");
 
-        for (int n = 4; n <= 12; n++) {
-            Polygon p = syntheticGon(n);
-            Result r = DesignEnumerator.enumerate(p, DesignEvaluator.STANDARD);
+        for (int deltaCount = 4; deltaCount <= 12; deltaCount++) {
+            Polygon polygon = syntheticGon(deltaCount);
+            Result result = DesignEnumerator.enumerate(polygon, DesignEvaluator.STANDARD);
 
-            System.out.printf("%-4d %-16d %-10.1f %-8d %-14.3e%n", n, r.getN(), r.getMs(), r.getMinViol(), r.getN() / (r.getMs() / 1000.0));
+            System.out.printf("%-4d %-16d %-10.1f %-8d %-14.3e%n", deltaCount, result.getTotalDesignCount(),
+                    result.getElapsedMillis(), result.getMinViolations(),
+                    result.getTotalDesignCount() / (result.getElapsedMillis() / 1000.0));
         }
     }
 
@@ -85,47 +92,47 @@ public class TriangulationSanityChecks {
      * @return the "clock app" polygon
      */
     private static Polygon clockApp() {
-        String[] names = {"DigitalView", "Clock", "Time", "Hour"};
-        RefEdge[] refs = {
+        String[] classNames = {"DigitalView", "Clock", "Time", "Hour"};
+        RefEdge[] boundary = {
                 new RefEdge("clock", 0, 1, true), // DigitalView -> Clock (field)
                 new RefEdge("time", 1, 2, true), // Clock -> Time (field)
                 new RefEdge("hour", 2, 3, true), // Time -> Hour (field)
                 new RefEdge("h", 3, 0, false), // Hour -> DigitalView (local)
         };
-        return new Polygon(names, refs);
+        return new Polygon(classNames, boundary);
     }
 
     /**
      * Builds a synthetic {@code (n + 2)}-gon with alternating field/local references, used as a
      * generic input of a given size for enumeration.
      *
-     * @param n the number of diagonals/deltas of the resulting polygon
+     * @param deltaCount the number of diagonals/deltas of the resulting polygon
      * @return the synthetic polygon
      */
-    private static Polygon syntheticGon(int n) {
-        int k = n + 2;
-        String[] names = new String[k];
-        RefEdge[] refs = new RefEdge[k];
+    private static Polygon syntheticGon(int deltaCount) {
+        int vertexCount = deltaCount + 2;
+        String[] classNames = new String[vertexCount];
+        RefEdge[] boundary = new RefEdge[vertexCount];
 
-        for (int i = 0; i < k; i++) {
-            names[i] = "C" + i;
-            refs[i] = new RefEdge("e" + i, i, (i + 1) % k, (i % 2 == 0));
+        for (int vertexIndex = 0; vertexIndex < vertexCount; vertexIndex++) {
+            classNames[vertexIndex] = "C" + vertexIndex;
+            boundary[vertexIndex] = new RefEdge("e" + vertexIndex, vertexIndex, (vertexIndex + 1) % vertexCount, (vertexIndex % 2 == 0));
         }
-        return new Polygon(names, refs);
+        return new Polygon(classNames, boundary);
     }
 
     /**
-     * Computes the {@code n}-th Catalan number.
+     * Computes the {@code catalanIndex}-th Catalan number.
      *
-     * @param n the index of the Catalan number to compute
-     * @return the {@code n}-th Catalan number
+     * @param catalanIndex the index of the Catalan number to compute
+     * @return the {@code catalanIndex}-th Catalan number
      */
-    private static long catalan(int n) {
-        long c = 1;
+    private static long catalan(int catalanIndex) {
+        long catalanNumber = 1;
 
-        for (int i = 0; i < n; i++) {
-            c = c * 2 * (2L * i + 1) / (i + 2);
+        for (int index = 0; index < catalanIndex; index++) {
+            catalanNumber = catalanNumber * 2 * (2L * index + 1) / (index + 2);
         }
-        return c;
+        return catalanNumber;
     }
 }

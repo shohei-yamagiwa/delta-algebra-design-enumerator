@@ -16,9 +16,9 @@ public class ParallelBenchmarks {
      * @throws Exception if a parallel sampling task fails
      */
     public static void run() throws Exception {
-        int cores = Runtime.getRuntime().availableProcessors();
+        int availableProcessorCount = Runtime.getRuntime().availableProcessors();
 
-        System.out.println("availableProcessors = " + cores + "\n");
+        System.out.println("availableProcessors = " + availableProcessorCount + "\n");
 
         checkReproducesReferenceNumbers();
         checkMulticoreMatchesSerial();
@@ -32,9 +32,11 @@ public class ParallelBenchmarks {
     private static void checkReproducesReferenceNumbers() {
         System.out.println("== zero-alloc reproduces reference numbers ==");
 
-        Acc chk = DeltaParallel.serial(6, SEED, 2_000_000);
+        long sampleCount = 2_000_000;
+        Acc accumulator = DeltaParallel.serial(6, SEED, sampleCount);
 
-        System.out.printf("n=6  satFrac(est)=%.6f  (DeltaSampler gave 0.015125)  best=%d%n%n", (double) chk.sat / 2_000_000, chk.best);
+        System.out.printf("n=6  satFrac(est)=%.6f  (DeltaSampler gave 0.015125)  best=%d%n%n",
+                (double) accumulator.satisfyingCount / sampleCount, accumulator.bestViolationCount);
     }
 
     /**
@@ -46,13 +48,17 @@ public class ParallelBenchmarks {
     private static void checkMulticoreMatchesSerial() throws Exception {
         System.out.println("== multicore result == serial result ==");
 
-        int nC = 60;
-        long Sc = 300_000;
-        Acc s1 = DeltaParallel.serial(nC, SEED, Sc);
-        Acc s8 = DeltaParallel.parallel(nC, SEED, Sc, 8);
-        boolean same = (s1.best == s8.best) && (s1.sat == s8.sat) && Arrays.equals(s1.hist, s8.hist);
+        int deltaCount = 60;
+        long sampleCount = 300_000;
+        Acc serialResult = DeltaParallel.serial(deltaCount, SEED, sampleCount);
+        Acc parallelResult = DeltaParallel.parallel(deltaCount, SEED, sampleCount, 8);
+        boolean identical = (serialResult.bestViolationCount == parallelResult.bestViolationCount)
+                && (serialResult.satisfyingCount == parallelResult.satisfyingCount)
+                && Arrays.equals(serialResult.violationHistogram, parallelResult.violationHistogram);
 
-        System.out.printf("n=%d S=%d : serial(best=%d,sat=%d) vs 8-thread(best=%d,sat=%d) -> %s%n%n", nC, Sc, s1.best, s1.sat, s8.best, s8.sat, same ? "IDENTICAL" : "MISMATCH");
+        System.out.printf("n=%d S=%d : serial(best=%d,sat=%d) vs 8-thread(best=%d,sat=%d) -> %s%n%n",
+                deltaCount, sampleCount, serialResult.bestViolationCount, serialResult.satisfyingCount,
+                parallelResult.bestViolationCount, parallelResult.satisfyingCount, identical ? "IDENTICAL" : "MISMATCH");
     }
 
     /**
@@ -62,26 +68,27 @@ public class ParallelBenchmarks {
      * @throws Exception if a parallel sampling task fails
      */
     private static void measureStrongScaling() throws Exception {
-        int nC = 60;
-        long Sc = 300_000;
+        int deltaCount = 60;
+        long sampleCount = 300_000;
 
-        System.out.println("== strong scaling (n=" + nC + ", S=" + Sc + ") ==");
+        System.out.println("== strong scaling (n=" + deltaCount + ", S=" + sampleCount + ") ==");
         System.out.printf("%-8s %-12s %-10s %-12s%n", "threads", "time(ms)", "speedup", "efficiency");
 
-        double base = -1;
+        double baselineElapsedMillis = -1;
 
-        for (int t : new int[]{1, 2, 4, 8, 12}) {
-            long t0 = System.nanoTime();
+        for (int threadCount : new int[]{1, 2, 4, 8, 12}) {
+            long startTimeNanos = System.nanoTime();
 
-            DeltaParallel.parallel(nC, SEED, Sc, t);
+            DeltaParallel.parallel(deltaCount, SEED, sampleCount, threadCount);
 
-            double ms = (System.nanoTime() - t0) / 1e6;
+            double elapsedMillis = (System.nanoTime() - startTimeNanos) / 1e6;
 
-            if (base < 0) {
-                base = ms;
+            if (baselineElapsedMillis < 0) {
+                baselineElapsedMillis = elapsedMillis;
             }
 
-            System.out.printf("%-8d %-12.1f %-10.2f %-12.2f%n", t, ms, base / ms, (base / ms) / t);
+            System.out.printf("%-8d %-12.1f %-10.2f %-12.2f%n", threadCount, elapsedMillis,
+                    baselineElapsedMillis / elapsedMillis, (baselineElapsedMillis / elapsedMillis) / threadCount);
         }
     }
 }

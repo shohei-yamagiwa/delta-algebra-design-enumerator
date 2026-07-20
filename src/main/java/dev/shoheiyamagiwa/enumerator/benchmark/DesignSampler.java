@@ -8,152 +8,154 @@ import java.util.Arrays;
 import java.util.List;
 
 public class DesignSampler {
-    public static List<int[]> remyTriangles(int n, SplitMix64 random) {
-        int NN = 2 * n + 1;
-        int[] Lc = new int[NN];
-        int[] Rc = new int[NN];
-        int[] par = new int[NN];
-        int[] side = new int[NN];
-        boolean[] internal = new boolean[NN];
+    public static List<int[]> remyTriangles(int deltaCount, SplitMix64 random) {
+        int nodeCount = 2 * deltaCount + 1;
+        int[] leftChild = new int[nodeCount];
+        int[] rightChild = new int[nodeCount];
+        int[] parent = new int[nodeCount];
+        int[] childSide = new int[nodeCount];
+        boolean[] internal = new boolean[nodeCount];
 
-        Arrays.fill(Lc, -1);
-        Arrays.fill(Rc, -1);
-        Arrays.fill(par, -1);
-        Arrays.fill(side, -1);
+        Arrays.fill(leftChild, -1);
+        Arrays.fill(rightChild, -1);
+        Arrays.fill(parent, -1);
+        Arrays.fill(childSide, -1);
 
-        int[] list = new int[NN];
-        int count = 0;
+        int[] activeNodes = new int[nodeCount];
+        int activeNodeCount = 0;
         int root = 0;
 
-        list[count++] = 0; // start: single leaf (node 0)
+        activeNodes[activeNodeCount++] = 0; // start: single leaf (node 0)
 
-        for (int k = 1; k <= n; k++) {
-            int intn = 2 * k - 1;
-            int leaf = 2 * k;
-            int i = list[random.nextInt(2 * k - 1)]; // uniform among current 2k-1 nodes
-            int b = random.nextBit() ? 1 : 0;
-            int p = par[i], ps = side[i];
+        for (int step = 1; step <= deltaCount; step++) {
+            int internalNode = 2 * step - 1;
+            int newLeaf = 2 * step;
+            int pickedNode = activeNodes[random.nextInt(2 * step - 1)]; // uniform among current 2*step-1 nodes
+            int chosenSide = random.nextBit() ? 1 : 0;
+            int parentNode = parent[pickedNode];
+            int parentSide = childSide[pickedNode];
 
-            par[intn] = p;
-            side[intn] = ps;
-            internal[intn] = true;
+            parent[internalNode] = parentNode;
+            childSide[internalNode] = parentSide;
+            internal[internalNode] = true;
 
-            if (p == -1) {
-                root = intn;
+            if (parentNode == -1) {
+                root = internalNode;
             } else {
-                if (ps == 0) Lc[p] = intn;
-                else Rc[p] = intn;
+                if (parentSide == 0) leftChild[parentNode] = internalNode;
+                else rightChild[parentNode] = internalNode;
             }
 
-            if (b == 0) {
-                Lc[intn] = i;
-                par[i] = intn;
-                side[i] = 0;
-                Rc[intn] = leaf;
-                par[leaf] = intn;
-                side[leaf] = 1;
+            if (chosenSide == 0) {
+                leftChild[internalNode] = pickedNode;
+                parent[pickedNode] = internalNode;
+                childSide[pickedNode] = 0;
+                rightChild[internalNode] = newLeaf;
+                parent[newLeaf] = internalNode;
+                childSide[newLeaf] = 1;
             } else {
-                Lc[intn] = leaf;
-                par[leaf] = intn;
-                side[leaf] = 0;
-                Rc[intn] = i;
-                par[i] = intn;
-                side[i] = 1;
+                leftChild[internalNode] = newLeaf;
+                parent[newLeaf] = internalNode;
+                childSide[newLeaf] = 0;
+                rightChild[internalNode] = pickedNode;
+                parent[pickedNode] = internalNode;
+                childSide[pickedNode] = 1;
             }
 
-            list[count++] = intn;
-            list[count++] = leaf;
+            activeNodes[activeNodeCount++] = internalNode;
+            activeNodes[activeNodeCount++] = newLeaf;
         }
 
-        int[] leaves = new int[NN];
+        int[] leafCounts = new int[nodeCount];
 
-        countLeaves(root, internal, Lc, Rc, leaves);
+        countLeaves(root, internal, leftChild, rightChild, leafCounts);
 
-        List<int[]> triangles = new ArrayList<>(n);
-        buildTriangles(root, 0, n + 1, internal, Lc, Rc, leaves, triangles);
+        List<int[]> triangles = new ArrayList<>(deltaCount);
+        buildTriangles(root, 0, deltaCount + 1, internal, leftChild, rightChild, leafCounts, triangles);
 
         return triangles;
     }
 
-    private static int countLeaves(int node, boolean[] in, int[] Lc, int[] Rc, int[] leaves) {
+    private static int countLeaves(int node, boolean[] internal, int[] leftChild, int[] rightChild, int[] leafCounts) {
         if (node == -1) {
             return 0;
         }
 
-        if (!in[node]) {
-            leaves[node] = 1;
+        if (!internal[node]) {
+            leafCounts[node] = 1;
             return 1;
         }
 
-        int c = countLeaves(Lc[node], in, Lc, Rc, leaves) + countLeaves(Rc[node], in, Lc, Rc, leaves);
-        leaves[node] = c;
+        int leafCount = countLeaves(leftChild[node], internal, leftChild, rightChild, leafCounts)
+                + countLeaves(rightChild[node], internal, leftChild, rightChild, leafCounts);
+        leafCounts[node] = leafCount;
 
-        return c;
+        return leafCount;
     }
 
-    private static void buildTriangles(int node, int lo, int hi, boolean[] in, int[] Lc, int[] Rc, int[] leaves, List<int[]> out) {
-        if (node == -1 || !in[node]) {
+    private static void buildTriangles(int node, int arcStart, int arcEnd, boolean[] internal, int[] leftChild, int[] rightChild, int[] leafCounts, List<int[]> triangles) {
+        if (node == -1 || !internal[node]) {
             return;
         }
 
-        int mid = lo + leaves[Lc[node]];
+        int arcMid = arcStart + leafCounts[leftChild[node]];
 
-        out.add(new int[]{lo, mid, hi});
+        triangles.add(new int[]{arcStart, arcMid, arcEnd});
 
-        buildTriangles(Lc[node], lo, mid, in, Lc, Rc, leaves, out);
-        buildTriangles(Rc[node], mid, hi, in, Lc, Rc, leaves, out);
+        buildTriangles(leftChild[node], arcStart, arcMid, internal, leftChild, rightChild, leafCounts, triangles);
+        buildTriangles(rightChild[node], arcMid, arcEnd, internal, leftChild, rightChild, leafCounts, triangles);
     }
 
-    public static SplitMix64 rngForSample(long globalSeed, long i) {
-        return new SplitMix64(SplitMix64.mix64(globalSeed ^ SplitMix64.mix64(i)));
+    public static SplitMix64 rngForSample(long globalSeed, long sampleIndex) {
+        return new SplitMix64(SplitMix64.mix64(globalSeed ^ SplitMix64.mix64(sampleIndex)));
     }
 
-    static int violationsFromParts(int setDirBits, int ears) {
-        return DesignEvaluator.violations(setDirBits, ears);
+    static int violationsFromParts(int setDirectionBits, int ears) {
+        return DesignEvaluator.violations(setDirectionBits, ears);
     }
 
-    static int sampleViolations(int n, long globalSeed, long i) {
-        SplitMix64 rng = rngForSample(globalSeed, i);
-        List<int[]> tris = remyTriangles(n, rng);
-        int[] de = TriangulationUtils.diagonalCountAndEars(tris, n + 2, null); // {#diagonals, ears}
-        int nd = de[0];
-        int ears = de[1]; // nd == n-1
-        int set = 0;
+    static int sampleViolations(int deltaCount, long globalSeed, long sampleIndex) {
+        SplitMix64 rng = rngForSample(globalSeed, sampleIndex);
+        List<int[]> triangles = remyTriangles(deltaCount, rng);
+        int[] diagonalCountAndEarCount = TriangulationUtils.diagonalCountAndEars(triangles, deltaCount + 2, null); // {#diagonals, ears}
+        int diagonalCount = diagonalCountAndEarCount[0];
+        int ears = diagonalCountAndEarCount[1]; // diagonalCount == deltaCount-1
+        int setDirectionBits = 0;
 
-        for (int d = 0; d < nd; d++) {
-            if (rng.nextBit()) set++; // directions
+        for (int diagonalIndex = 0; diagonalIndex < diagonalCount; diagonalIndex++) {
+            if (rng.nextBit()) setDirectionBits++; // directions
         }
 
-        return violationsFromParts(set, ears);
+        return violationsFromParts(setDirectionBits, ears);
     }
 
-    public static long[] exact(int n) {
-        int k = n + 2;
-        int[] v = new int[k];
+    public static long[] exact(int deltaCount) {
+        int vertexCount = deltaCount + 2;
+        int[] vertices = new int[vertexCount];
 
-        for (int x = 0; x < k; x++) {
-            v[x] = x;
+        for (int vertexIndex = 0; vertexIndex < vertexCount; vertexIndex++) {
+            vertices[vertexIndex] = vertexIndex;
         }
 
-        List<List<int[]>> all = TriangulationUtils.triFill(v);
-        long dir = 1L << (n - 1);
-        int minV = Integer.MAX_VALUE;
-        long sat = 0;
+        List<List<int[]>> allTriangulations = TriangulationUtils.triFill(vertices);
+        long directionCombinationCount = 1L << (deltaCount - 1);
+        int minViolations = Integer.MAX_VALUE;
+        long satisfyingCount = 0;
 
-        for (List<int[]> tris : all) {
-            int ears = TriangulationUtils.diagonalCountAndEars(tris, k, null)[1];
+        for (List<int[]> triangles : allTriangulations) {
+            int ears = TriangulationUtils.diagonalCountAndEars(triangles, vertexCount, null)[1];
 
-            for (long m = 0; m < dir; m++) {
-                int viol = DesignEvaluator.violations(Long.bitCount(m), ears);
+            for (long directionBits = 0; directionBits < directionCombinationCount; directionBits++) {
+                int violations = DesignEvaluator.violations(Long.bitCount(directionBits), ears);
 
-                if (viol < minV) {
-                    minV = viol;
+                if (violations < minViolations) {
+                    minViolations = violations;
                 }
-                if (viol == 0) {
-                    sat++;
+                if (violations == 0) {
+                    satisfyingCount++;
                 }
             }
         }
-        return new long[]{minV, sat, (long) all.size() * dir};
+        return new long[]{minViolations, satisfyingCount, (long) allTriangulations.size() * directionCombinationCount};
     }
 }
