@@ -151,7 +151,6 @@ public class PrimitiveDelta implements Delta {
 
         useRefs.add(useRef0);
         useRefs.add(useRef1);
-
         return useRefs;
     }
 
@@ -165,10 +164,9 @@ public class PrimitiveDelta implements Delta {
         Set<Class> classes = new HashSet<>();
 
         for (Reference boundaryRef : boundaries()) {
-            classes.add(boundaryRef.getTarget());
+            classes.add(boundaryRef.getSource());
             classes.add(boundaryRef.getTarget());
         }
-
         return classes;
     }
 }

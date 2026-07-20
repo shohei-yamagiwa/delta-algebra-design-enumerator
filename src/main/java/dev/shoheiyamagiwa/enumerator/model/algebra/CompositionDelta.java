@@ -277,7 +277,7 @@ public class CompositionDelta implements Delta {
         Set<Class> classes = new HashSet<>();
 
         for (Reference boundaryRef : boundaries()) {
-            classes.add(boundaryRef.getTarget());
+            classes.add(boundaryRef.getSource());
             classes.add(boundaryRef.getTarget());
         }
 
