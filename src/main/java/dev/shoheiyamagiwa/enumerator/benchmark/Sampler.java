@@ -1,5 +1,18 @@
 package dev.shoheiyamagiwa.enumerator.benchmark;
 
+import dev.shoheiyamagiwa.enumerator.core.DesignEvaluator;
+import dev.shoheiyamagiwa.enumerator.core.TriangulationUtils;
+
+/**
+ * Zero-allocation, reusable-buffer counterpart of {@link DesignSampler}'s Rémy-tree sampling, used
+ * by {@link DeltaParallel} for high-throughput (parallel) benchmarking. Its Rémy-tree construction
+ * and ear-counting recursion intentionally duplicate the algorithms in {@link DesignSampler} and
+ * {@link TriangulationUtils}: unlike those, this class reuses pre-allocated instance arrays across
+ * calls to {@link #eval} (instead of allocating a fresh {@code List}/arrays per sample), which is
+ * the whole point of this class on the hot sampling path. The RNG mixing step ({@link #mix64}) and
+ * the boundary-edge test ({@link #isBnd}) have no such allocation concern, so they simply delegate
+ * to {@link SplitMix64#mix64} and {@link TriangulationUtils#isBoundary} respectively.
+ */
 public class Sampler {
     private static final long GAMMA = 0x9E3779B97F4A7C15L;
 
@@ -105,7 +118,7 @@ public class Sampler {
             }
         }
 
-        return set + (ears - 2); // PLUG-IN: replace with real Demeter metric
+        return DesignEvaluator.violations(set, ears);
     }
 
     int leafCount(int node) {
@@ -154,12 +167,10 @@ public class Sampler {
     }
 
     public static long mix64(long z) {
-        z = (z ^ (z >>> 30)) * 0xbf58476d1ce4e5b9L;
-        z = (z ^ (z >>> 27)) * 0x94d049bb133111ebL;
-        return z ^ (z >>> 31);
+        return SplitMix64.mix64(z);
     }
 
     boolean isBnd(int a, int c) {
-        return (c - a == 1) || (a == 0 && c == gk - 1);
+        return TriangulationUtils.isBoundary(a, c, gk);
     }
 }

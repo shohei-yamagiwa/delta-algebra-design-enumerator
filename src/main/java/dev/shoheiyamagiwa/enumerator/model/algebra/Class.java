@@ -32,4 +32,9 @@ public class Class {
 
         return this.name.equals(that.name);
     }
+
+    @Override
+    public int hashCode() {
+        return name.hashCode();
+    }
 }

@@ -67,4 +67,31 @@ public class DeltaTest {
 
         assertEquals(expected, actual);
     }
+
+    @Test
+    @DisplayName("同値だが別インスタンスの参照からなるデルタが等しいと判定される")
+    public void combineDeltasBuiltFromEqualButDistinctReferences() {
+        Reference refAtoB = new Reference(new Class("A"), new Class("B"), ReferenceType.FIELD);
+        Reference refBtoC = new Reference(new Class("B"), new Class("C"), ReferenceType.FIELD);
+        Reference refAtoC = new Reference(new Class("A"), new Class("C"), ReferenceType.LOCAL);
+        Reference refAtoD = new Reference(new Class("A"), new Class("D"), ReferenceType.FIELD);
+        Reference refDtoC = new Reference(new Class("D"), new Class("C"), ReferenceType.FIELD);
+
+        PrimitiveDelta primitiveDelta1 = new PrimitiveDelta(refAtoB, refBtoC, refAtoC);
+        PrimitiveDelta primitiveDelta2 = new PrimitiveDelta(refAtoC, refAtoD, refDtoC);
+
+        // Rebuilt from scratch: no instance is shared with the deltas above.
+        SequencedSet<Reference> expectedUsedRefs = new LinkedHashSet<>(List.of(
+                new Reference(new Class("A"), new Class("B"), ReferenceType.FIELD),
+                new Reference(new Class("B"), new Class("C"), ReferenceType.FIELD),
+                new Reference(new Class("A"), new Class("D"), ReferenceType.FIELD)));
+        SequencedSet<Reference> expectedSharedRefs = new LinkedHashSet<>(List.of(
+                new Reference(new Class("A"), new Class("C"), ReferenceType.LOCAL)));
+        Reference expectedDefRef = new Reference(new Class("D"), new Class("C"), ReferenceType.FIELD);
+
+        CompositionDelta expected = new CompositionDelta(expectedUsedRefs, expectedDefRef, expectedSharedRefs);
+        CompositionDelta actual = primitiveDelta1.combine(primitiveDelta2);
+
+        assertEquals(expected, actual);
+    }
 }

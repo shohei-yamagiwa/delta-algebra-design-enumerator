@@ -2,6 +2,7 @@ package dev.shoheiyamagiwa.enumerator.model.algebra;
 
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.SequencedSet;
 import java.util.Set;
 
@@ -252,6 +253,11 @@ public class CompositionDelta implements Delta {
         boolean sameDefRef = this.defRef.equals(that.defRef);
 
         return sameUseRefs && sameSharedRefs && sameDefRef;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(useRefs, sharedRefs, defRef);
     }
 
     public SequencedSet<PrimitiveDelta> deltas() {

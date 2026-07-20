@@ -1,5 +1,7 @@
 package dev.shoheiyamagiwa.enumerator.model.algebra;
 
+import java.util.Objects;
+
 public class Reference {
     private Class source;
     private Class target;
@@ -62,5 +64,10 @@ public class Reference {
 
         return this.source.equals(that.getSource()) && this.target.equals(that.getTarget())
                 && this.type.equals(that.getType());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(source, target, type);
     }
 }
