@@ -62,8 +62,11 @@ public class Sampler {
             if (p == -1) {
                 root = intn;
             } else {
-                if (ps == 0) Lc[p] = intn;
-                else Rc[p] = intn;
+                if (ps == 0) {
+                    Lc[p] = intn;
+                } else {
+                    Rc[p] = intn;
+                }
             }
 
             if (b == 0) {

@@ -171,7 +171,7 @@ public class Benchmark {
 
         double base = -1;
 
-        for (int t : new int[]{1, 2, 4, 8}) {
+        for (int t : new int[]{1, 2, 4, 8, 12}) {
             long t0 = System.nanoTime();
 
             DeltaParallel.parallel(nC, seed, Sc, t);
