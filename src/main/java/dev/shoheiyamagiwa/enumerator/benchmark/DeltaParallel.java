@@ -9,9 +9,6 @@ import java.util.concurrent.Future;
 public class DeltaParallel {
     public static Acc serial(int n, long seed, long S) {
         Sampler w = new Sampler(n);
-
-        w.gk = n + 2;
-
         Acc a = new Acc();
 
         for (long i = 0; i < S; i++) {
@@ -31,9 +28,6 @@ public class DeltaParallel {
 
             fs.add(pool.submit(() -> {
                 Sampler w = new Sampler(n);
-
-                w.gk = n + 2;
-
                 Acc a = new Acc();
 
                 for (long i = lo; i < hi; i++) {
