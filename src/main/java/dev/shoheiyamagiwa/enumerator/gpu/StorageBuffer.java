@@ -37,7 +37,7 @@ public final class StorageBuffer implements AutoCloseable {
                     .sharingMode(VK_SHARING_MODE_EXCLUSIVE);
 
             LongBuffer bufferPointer = stack.mallocLong(1);
-            requireSuccess(vkCreateBuffer(device, bufferCreateInfo, null, bufferPointer), "vkCreateBuffer");
+            VulkanResults.requireSuccess(vkCreateBuffer(device, bufferCreateInfo, null, bufferPointer), "vkCreateBuffer");
 
             return bufferPointer.get(0);
         }
@@ -57,10 +57,10 @@ public final class StorageBuffer implements AutoCloseable {
                     .memoryTypeIndex(memoryTypeIndex);
 
             LongBuffer memoryPointer = stack.mallocLong(1);
-            requireSuccess(vkAllocateMemory(device, memoryAllocateInfo, null, memoryPointer), "vkAllocateMemory");
+            VulkanResults.requireSuccess(vkAllocateMemory(device, memoryAllocateInfo, null, memoryPointer), "vkAllocateMemory");
 
             long memoryHandle = memoryPointer.get(0);
-            requireSuccess(vkBindBufferMemory(device, bufferHandle, memoryHandle, 0L), "vkBindBufferMemory");
+            VulkanResults.requireSuccess(vkBindBufferMemory(device, bufferHandle, memoryHandle, 0L), "vkBindBufferMemory");
 
             return memoryHandle;
         }
@@ -87,7 +87,7 @@ public final class StorageBuffer implements AutoCloseable {
     public long[] readLongs(int elementCount) {
         try (MemoryStack stack = stackPush()) {
             PointerBuffer mappedPointer = stack.mallocPointer(1);
-            requireSuccess(vkMapMemory(device, memoryHandle, 0L, VK_WHOLE_SIZE, 0, mappedPointer), "vkMapMemory");
+            VulkanResults.requireSuccess(vkMapMemory(device, memoryHandle, 0L, VK_WHOLE_SIZE, 0, mappedPointer), "vkMapMemory");
 
             LongBuffer mappedLongs = mappedPointer.getLongBuffer(0, elementCount);
             long[] values = new long[elementCount];
@@ -105,12 +105,6 @@ public final class StorageBuffer implements AutoCloseable {
 
     public long getSizeInBytes() {
         return sizeInBytes;
-    }
-
-    private static void requireSuccess(int resultCode, String operationName) {
-        if (resultCode != VK_SUCCESS) {
-            throw new IllegalStateException("Failed to " + operationName + " (VkResult=" + resultCode + ")。");
-        }
     }
 
     @Override

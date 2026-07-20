@@ -48,7 +48,7 @@ public final class VulkanContext implements AutoCloseable {
 
             PointerBuffer instancePointer = stack.mallocPointer(1);
             int result = vkCreateInstance(instanceCreateInfo, null, instancePointer);
-            requireSuccess(result, "vkCreateInstance");
+            VulkanResults.requireSuccess(result, "vkCreateInstance");
 
             return new VkInstance(instancePointer.get(0), instanceCreateInfo);
         }
@@ -57,7 +57,7 @@ public final class VulkanContext implements AutoCloseable {
     private static VkPhysicalDevice selectPhysicalDeviceWithCompute(VkInstance instance) {
         try (MemoryStack stack = stackPush()) {
             IntBuffer deviceCount = stack.mallocInt(1);
-            requireSuccess(vkEnumeratePhysicalDevices(instance, deviceCount, null), "vkEnumeratePhysicalDevices");
+            VulkanResults.requireSuccess(vkEnumeratePhysicalDevices(instance, deviceCount, null), "vkEnumeratePhysicalDevices");
 
             int numberOfDevices = deviceCount.get(0);
             if (numberOfDevices == 0) {
@@ -65,7 +65,7 @@ public final class VulkanContext implements AutoCloseable {
             }
 
             PointerBuffer devicePointers = stack.mallocPointer(numberOfDevices);
-            requireSuccess(vkEnumeratePhysicalDevices(instance, deviceCount, devicePointers), "vkEnumeratePhysicalDevices");
+            VulkanResults.requireSuccess(vkEnumeratePhysicalDevices(instance, deviceCount, devicePointers), "vkEnumeratePhysicalDevices");
 
             VkPhysicalDevice firstComputeCapableDevice = null;
 
@@ -147,7 +147,7 @@ public final class VulkanContext implements AutoCloseable {
                     .pEnabledFeatures(enabledFeatures);
 
             PointerBuffer devicePointer = stack.mallocPointer(1);
-            requireSuccess(vkCreateDevice(physicalDevice, deviceCreateInfo, null, devicePointer), "vkCreateDevice");
+            VulkanResults.requireSuccess(vkCreateDevice(physicalDevice, deviceCreateInfo, null, devicePointer), "vkCreateDevice");
 
             return new VkDevice(devicePointer.get(0), physicalDevice, deviceCreateInfo);
         }
@@ -169,7 +169,7 @@ public final class VulkanContext implements AutoCloseable {
                     .queueFamilyIndex(computeQueueFamilyIndex);
 
             LongBuffer commandPoolPointer = stack.mallocLong(1);
-            requireSuccess(vkCreateCommandPool(device, commandPoolCreateInfo, null, commandPoolPointer), "vkCreateCommandPool");
+            VulkanResults.requireSuccess(vkCreateCommandPool(device, commandPoolCreateInfo, null, commandPoolPointer), "vkCreateCommandPool");
 
             return commandPoolPointer.get(0);
         }
@@ -190,12 +190,6 @@ public final class VulkanContext implements AutoCloseable {
             vkGetPhysicalDeviceProperties(physicalDevice, deviceProperties);
 
             return deviceProperties.deviceType();
-        }
-    }
-
-    private static void requireSuccess(int resultCode, String operationName) {
-        if (resultCode != VK_SUCCESS) {
-            throw new IllegalStateException("Failed to " + operationName + " (VkResult=" + resultCode + ")。");
         }
     }
 

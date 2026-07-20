@@ -40,7 +40,7 @@ public final class Mix64GpuRunner {
                     .commandBufferCount(1);
 
             PointerBuffer commandBufferPointer = stack.mallocPointer(1);
-            requireSuccess(vkAllocateCommandBuffers(device, allocateInfo, commandBufferPointer), "vkAllocateCommandBuffers");
+            VulkanResults.requireSuccess(vkAllocateCommandBuffers(device, allocateInfo, commandBufferPointer), "vkAllocateCommandBuffers");
 
             return new VkCommandBuffer(commandBufferPointer.get(0), device);
         }
@@ -52,7 +52,7 @@ public final class Mix64GpuRunner {
                     .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO)
                     .flags(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-            requireSuccess(vkBeginCommandBuffer(commandBuffer, beginInfo), "vkBeginCommandBuffer");
+            VulkanResults.requireSuccess(vkBeginCommandBuffer(commandBuffer, beginInfo), "vkBeginCommandBuffer");
 
             vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.getPipelineHandle());
 
@@ -70,7 +70,7 @@ public final class Mix64GpuRunner {
             int workgroupCount = ceilDivide(elementCount, WORKGROUP_SIZE);
             vkCmdDispatch(commandBuffer, workgroupCount, 1, 1);
 
-            requireSuccess(vkEndCommandBuffer(commandBuffer), "vkEndCommandBuffer");
+            VulkanResults.requireSuccess(vkEndCommandBuffer(commandBuffer), "vkEndCommandBuffer");
         }
     }
 
@@ -90,18 +90,18 @@ public final class Mix64GpuRunner {
             VkFenceCreateInfo fenceCreateInfo = VkFenceCreateInfo.calloc(stack).sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO);
 
             LongBuffer fencePointer = stack.mallocLong(1);
-            requireSuccess(vkCreateFence(device, fenceCreateInfo, null, fencePointer), "vkCreateFence");
+            VulkanResults.requireSuccess(vkCreateFence(device, fenceCreateInfo, null, fencePointer), "vkCreateFence");
 
             long fenceHandle = fencePointer.get(0);
 
             try {
                 VkSubmitInfo submitInfo = VkSubmitInfo.calloc(stack).sType(VK_STRUCTURE_TYPE_SUBMIT_INFO).pCommandBuffers(stack.pointers(commandBuffer));
 
-                requireSuccess(vkQueueSubmit(context.getComputeQueue(), submitInfo, fenceHandle), "vkQueueSubmit");
+                VulkanResults.requireSuccess(vkQueueSubmit(context.getComputeQueue(), submitInfo, fenceHandle), "vkQueueSubmit");
 
                 long waitTimeoutNanoseconds = Long.MAX_VALUE;
                 boolean waitForAllFences = true;
-                requireSuccess(vkWaitForFences(device, stack.longs(fenceHandle), waitForAllFences, waitTimeoutNanoseconds), "vkWaitForFences");
+                VulkanResults.requireSuccess(vkWaitForFences(device, stack.longs(fenceHandle), waitForAllFences, waitTimeoutNanoseconds), "vkWaitForFences");
             } finally {
                 vkDestroyFence(device, fenceHandle, null);
             }
@@ -116,11 +116,5 @@ public final class Mix64GpuRunner {
 
     private static int ceilDivide(int dividend, int divisor) {
         return (dividend + divisor - 1) / divisor;
-    }
-
-    private static void requireSuccess(int resultCode, String operationName) {
-        if (resultCode != VK_SUCCESS) {
-            throw new IllegalStateException("Failed to " + operationName + " (VkResult=" + resultCode + ")。");
-        }
     }
 }

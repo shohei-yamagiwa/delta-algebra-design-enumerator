@@ -49,7 +49,7 @@ public final class Mix64ComputePipeline implements AutoCloseable {
                     .pCode(spirvBuffer);
 
             LongBuffer shaderModulePointer = stack.mallocLong(1);
-            requireSuccess(vkCreateShaderModule(device, shaderModuleCreateInfo, null, shaderModulePointer), "vkCreateShaderModule");
+            VulkanResults.requireSuccess(vkCreateShaderModule(device, shaderModuleCreateInfo, null, shaderModulePointer), "vkCreateShaderModule");
 
             return shaderModulePointer.get(0);
         }
@@ -69,7 +69,7 @@ public final class Mix64ComputePipeline implements AutoCloseable {
                     .pBindings(layoutBindings);
 
             LongBuffer layoutPointer = stack.mallocLong(1);
-            requireSuccess(vkCreateDescriptorSetLayout(device, layoutCreateInfo, null, layoutPointer), "vkCreateDescriptorSetLayout");
+            VulkanResults.requireSuccess(vkCreateDescriptorSetLayout(device, layoutCreateInfo, null, layoutPointer), "vkCreateDescriptorSetLayout");
 
             return layoutPointer.get(0);
         }
@@ -89,7 +89,7 @@ public final class Mix64ComputePipeline implements AutoCloseable {
                     .pPushConstantRanges(pushConstantRanges);
 
             LongBuffer pipelineLayoutPointer = stack.mallocLong(1);
-            requireSuccess(vkCreatePipelineLayout(device, pipelineLayoutCreateInfo, null, pipelineLayoutPointer), "vkCreatePipelineLayout");
+            VulkanResults.requireSuccess(vkCreatePipelineLayout(device, pipelineLayoutCreateInfo, null, pipelineLayoutPointer), "vkCreatePipelineLayout");
 
             return pipelineLayoutPointer.get(0);
         }
@@ -110,7 +110,7 @@ public final class Mix64ComputePipeline implements AutoCloseable {
                     .layout(pipelineLayoutHandle);
 
             LongBuffer pipelinePointer = stack.mallocLong(1);
-            requireSuccess(
+            VulkanResults.requireSuccess(
                     vkCreateComputePipelines(device, VK_NULL_HANDLE, computePipelineCreateInfos, null, pipelinePointer),
                     "vkCreateComputePipelines");
 
@@ -131,7 +131,7 @@ public final class Mix64ComputePipeline implements AutoCloseable {
                     .maxSets(1);
 
             LongBuffer poolPointer = stack.mallocLong(1);
-            requireSuccess(vkCreateDescriptorPool(device, poolCreateInfo, null, poolPointer), "vkCreateDescriptorPool");
+            VulkanResults.requireSuccess(vkCreateDescriptorPool(device, poolCreateInfo, null, poolPointer), "vkCreateDescriptorPool");
 
             return poolPointer.get(0);
         }
@@ -145,7 +145,7 @@ public final class Mix64ComputePipeline implements AutoCloseable {
                     .pSetLayouts(stack.longs(descriptorSetLayoutHandle));
 
             LongBuffer descriptorSetPointer = stack.mallocLong(1);
-            requireSuccess(vkAllocateDescriptorSets(device, allocateInfo, descriptorSetPointer), "vkAllocateDescriptorSets");
+            VulkanResults.requireSuccess(vkAllocateDescriptorSets(device, allocateInfo, descriptorSetPointer), "vkAllocateDescriptorSets");
 
             return descriptorSetPointer.get(0);
         }
@@ -182,12 +182,6 @@ public final class Mix64ComputePipeline implements AutoCloseable {
 
     public long getDescriptorSetHandle() {
         return descriptorSetHandle;
-    }
-
-    private static void requireSuccess(int resultCode, String operationName) {
-        if (resultCode != VK_SUCCESS) {
-            throw new IllegalStateException("Failed to " + operationName + " (VkResult=" + resultCode + ")。");
-        }
     }
 
     private void closeQuietly() {
