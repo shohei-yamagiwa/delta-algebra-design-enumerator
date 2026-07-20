@@ -35,7 +35,7 @@ public class ParallelBenchmarks {
         long sampleCount = 2_000_000;
         Accumulator accumulator = DeltaParallel.serial(6, SEED, sampleCount);
 
-        System.out.printf("n=6  satFrac(est)=%.6f  (DeltaSampler gave 0.015125)  best=%d%n%n",
+        System.out.printf("n=6  satFrac(est)=%.6f best=%d%n%n",
                 (double) accumulator.satisfyingCount / sampleCount, accumulator.bestViolationCount);
     }
 

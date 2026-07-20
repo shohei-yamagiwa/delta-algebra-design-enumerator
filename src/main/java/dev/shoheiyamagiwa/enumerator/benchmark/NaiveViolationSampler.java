@@ -12,11 +12,7 @@ import java.util.List;
  * implementation that {@link ViolationSampler}'s zero-allocation fast path is checked against.
  */
 public class NaiveViolationSampler {
-    static int violationsFromParts(int setDirectionBits, int ears) {
-        return DesignEvaluator.violations(setDirectionBits, ears);
-    }
-
-    static int sampleViolations(int deltaCount, long globalSeed, long sampleIndex) {
+    public static int sampleViolations(int deltaCount, long globalSeed, long sampleIndex) {
         SplitMix64 rng = RemyTriangulationSampler.rngForSample(globalSeed, sampleIndex);
         List<int[]> triangles = RemyTriangulationSampler.remyTriangles(deltaCount, rng);
         int[] diagonalCountAndEarCount = TriangulationUtils.diagonalCountAndEars(triangles, deltaCount + 2, null); // {#diagonals, ears}
@@ -28,6 +24,6 @@ public class NaiveViolationSampler {
             if (rng.nextBit()) setDirectionBits++; // directions
         }
 
-        return violationsFromParts(setDirectionBits, ears);
+        return DesignEvaluator.violations(setDirectionBits, ears);
     }
 }

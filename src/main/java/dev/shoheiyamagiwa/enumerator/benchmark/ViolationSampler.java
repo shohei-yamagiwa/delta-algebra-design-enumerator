@@ -10,9 +10,7 @@ import dev.shoheiyamagiwa.enumerator.core.TriangulationUtils;
  * {@link RemyTriangulationSampler} and {@link TriangulationUtils}: unlike those, this class reuses
  * pre-allocated instance arrays across calls to {@link #eval} (instead of allocating a fresh
  * {@code List}/arrays per sample), which is
- * the whole point of this class on the hot sampling path. The RNG mixing step and
- * the boundary-edge test have no such allocation concern, so they simply delegate
- * to {@link SplitMix64#mix64} and {@link TriangulationUtils#isBoundary} respectively.
+ * the whole point of this class on the hot sampling path.
  */
 public class ViolationSampler {
     private static final long GAMMA_INCREMENT = 0x9E3779B97F4A7C15L;
@@ -38,9 +36,6 @@ public class ViolationSampler {
         internal = new boolean[maxNodeCount];
     }
 
-    /**
-     * violations for sample sampleIndex — no heap allocation. RNG draw order matches DeltaSampler.
-     */
     public int eval(int deltaCount, long seed, long sampleIndex) {
         long state = SplitMix64.mix64(seed ^ SplitMix64.mix64(sampleIndex)); // counter-based per-sample state
         int nodeCount = 2 * deltaCount + 1;
@@ -125,7 +120,7 @@ public class ViolationSampler {
         return DesignEvaluator.violations(setDirectionBits, ears);
     }
 
-    public int leafCount(int node) {
+    private int leafCount(int node) {
         if (node == -1) {
             return 0;
         }
@@ -150,7 +145,7 @@ public class ViolationSampler {
      *                    boundary test has to recognise the closing edge (0, vertexCount-1), which a
      *                    local arc cannot tell apart from a diagonal
      */
-    public void countEars(int node, int arcStart, int arcEnd, int vertexCount) {
+    private void countEars(int node, int arcStart, int arcEnd, int vertexCount) {
         if (node == -1 || !internal[node]) {
             return;
         }
