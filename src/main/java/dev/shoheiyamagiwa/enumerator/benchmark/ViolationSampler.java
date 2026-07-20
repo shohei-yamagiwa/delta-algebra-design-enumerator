@@ -36,6 +36,22 @@ public class ViolationSampler {
         internal = new boolean[maxNodeCount];
     }
 
+    /**
+     * Violations of the design identified by {@code sampleIndex}, computed without allocating on the
+     * heap.
+     * <p>
+     * The RNG draw order deliberately matches {@link NaiveViolationSampler#sampleViolations}: both
+     * draw the Rémy-tree node, then its side, then one bit per diagonal direction, all from the same
+     * counter-based state derived from {@code (seed, sampleIndex)}. That is what makes this fast path
+     * produce the very same sample as the slow reference, and hence what makes a parallel run
+     * reproduce the serial one. Reordering the draws here — even in a way that is still uniform —
+     * breaks that correspondence, so keep the two in step (see {@code FastPathEquivalenceTest}).
+     *
+     * @param deltaCount  the number of primitive deltas, i.e. the polygon has {@code deltaCount + 2} vertices
+     * @param seed        the global seed shared by every sample of a run
+     * @param sampleIndex the index of the sample to evaluate
+     * @return the number of violations of the sampled design
+     */
     public int eval(int deltaCount, long seed, long sampleIndex) {
         long state = SplitMix64.mix64(seed ^ SplitMix64.mix64(sampleIndex)); // counter-based per-sample state
         int nodeCount = 2 * deltaCount + 1;
