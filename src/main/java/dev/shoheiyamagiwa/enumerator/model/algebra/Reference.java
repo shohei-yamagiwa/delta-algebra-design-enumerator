@@ -3,8 +3,8 @@ package dev.shoheiyamagiwa.enumerator.model.algebra;
 import java.util.Objects;
 
 public class Reference {
-    private Class source;
-    private Class target;
+    private final Class source;
+    private final Class target;
 
     private ReferenceType type;
 
@@ -14,11 +14,8 @@ public class Reference {
         this.type = type;
     }
 
-    public void inverse() {
-        Class tempSource = source;
-
-        source = target;
-        target = tempSource;
+    public Reference inverse() {
+        return new Reference(target, source, type);
     }
 
     public boolean isField() {
