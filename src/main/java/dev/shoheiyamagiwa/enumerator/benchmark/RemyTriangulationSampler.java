@@ -1,13 +1,14 @@
 package dev.shoheiyamagiwa.enumerator.benchmark;
 
-import dev.shoheiyamagiwa.enumerator.core.DesignEvaluator;
-import dev.shoheiyamagiwa.enumerator.core.TriangulationUtils;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class DesignSampler {
+/**
+ * Builds a uniformly random triangulation (Δ-partition) of a convex polygon via a Rémy-tree
+ * construction, together with the RNG seeding used to make a given sample reproducible.
+ */
+public class RemyTriangulationSampler {
     public static List<int[]> remyTriangles(int deltaCount, SplitMix64 random) {
         int nodeCount = 2 * deltaCount + 1;
         int[] leftChild = new int[nodeCount];
@@ -108,54 +109,5 @@ public class DesignSampler {
 
     public static SplitMix64 rngForSample(long globalSeed, long sampleIndex) {
         return new SplitMix64(SplitMix64.mix64(globalSeed ^ SplitMix64.mix64(sampleIndex)));
-    }
-
-    static int violationsFromParts(int setDirectionBits, int ears) {
-        return DesignEvaluator.violations(setDirectionBits, ears);
-    }
-
-    static int sampleViolations(int deltaCount, long globalSeed, long sampleIndex) {
-        SplitMix64 rng = rngForSample(globalSeed, sampleIndex);
-        List<int[]> triangles = remyTriangles(deltaCount, rng);
-        int[] diagonalCountAndEarCount = TriangulationUtils.diagonalCountAndEars(triangles, deltaCount + 2, null); // {#diagonals, ears}
-        int diagonalCount = diagonalCountAndEarCount[0];
-        int ears = diagonalCountAndEarCount[1]; // diagonalCount == deltaCount-1
-        int setDirectionBits = 0;
-
-        for (int diagonalIndex = 0; diagonalIndex < diagonalCount; diagonalIndex++) {
-            if (rng.nextBit()) setDirectionBits++; // directions
-        }
-
-        return violationsFromParts(setDirectionBits, ears);
-    }
-
-    public static long[] exact(int deltaCount) {
-        int vertexCount = deltaCount + 2;
-        int[] vertices = new int[vertexCount];
-
-        for (int vertexIndex = 0; vertexIndex < vertexCount; vertexIndex++) {
-            vertices[vertexIndex] = vertexIndex;
-        }
-
-        List<List<int[]>> allTriangulations = TriangulationUtils.triFill(vertices);
-        long directionCombinationCount = 1L << (deltaCount - 1);
-        int minViolations = Integer.MAX_VALUE;
-        long satisfyingCount = 0;
-
-        for (List<int[]> triangles : allTriangulations) {
-            int ears = TriangulationUtils.diagonalCountAndEars(triangles, vertexCount, null)[1];
-
-            for (long directionBits = 0; directionBits < directionCombinationCount; directionBits++) {
-                int violations = DesignEvaluator.violations(Long.bitCount(directionBits), ears);
-
-                if (violations < minViolations) {
-                    minViolations = violations;
-                }
-                if (violations == 0) {
-                    satisfyingCount++;
-                }
-            }
-        }
-        return new long[]{minViolations, satisfyingCount, (long) allTriangulations.size() * directionCombinationCount};
     }
 }

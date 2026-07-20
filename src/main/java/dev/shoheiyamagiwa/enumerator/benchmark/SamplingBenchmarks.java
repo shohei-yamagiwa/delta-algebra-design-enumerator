@@ -8,9 +8,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Benchmarks and checks about {@link DesignSampler}'s Rémy-tree-based random sampling: that it
- * samples each triangulation uniformly, that its violation estimates match the exact values for
- * small {@code n}, and how it performs for {@code n} values too large for exhaustive enumeration.
+ * Benchmarks and checks about {@link RemyTriangulationSampler}'s Rémy-tree-based random sampling:
+ * that it samples each triangulation uniformly, that {@link NaiveViolationSampler}'s violation
+ * estimates match the {@link ExactDesignEvaluator} values for small {@code n}, and how it performs
+ * for {@code n} values too large for exhaustive enumeration.
  */
 public class SamplingBenchmarks {
     private static final long SEED = 12345L;
@@ -36,7 +37,7 @@ public class SamplingBenchmarks {
         Map<String, Integer> triangulationFrequency = new HashMap<>();
 
         for (long sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++) {
-            List<int[]> triangles = DesignSampler.remyTriangles(deltaCount, DesignSampler.rngForSample(SEED, sampleIndex));
+            List<int[]> triangles = RemyTriangulationSampler.remyTriangles(deltaCount, RemyTriangulationSampler.rngForSample(SEED, sampleIndex));
             List<int[]> diagonals = new ArrayList<>();
 
             TriangulationUtils.diagonalCountAndEars(triangles, deltaCount + 2, diagonals);
@@ -72,13 +73,13 @@ public class SamplingBenchmarks {
         long sampleCount = 2_000_000;
 
         for (int deltaCount : new int[]{4, 6, 8}) {
-            long[] exact = DesignSampler.exact(deltaCount);
+            long[] exact = ExactDesignEvaluator.exact(deltaCount);
             double exactSatisfyingFraction = (double) exact[1] / exact[2];
             long satisfyingHitCount = 0;
             int estimatedMinViolations = Integer.MAX_VALUE;
 
             for (long sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++) {
-                int violations = DesignSampler.sampleViolations(deltaCount, SEED, sampleIndex);
+                int violations = NaiveViolationSampler.sampleViolations(deltaCount, SEED, sampleIndex);
 
                 if (violations == 0) {
                     satisfyingHitCount++;
@@ -109,7 +110,7 @@ public class SamplingBenchmarks {
             long satisfyingFoundCount = 0;
 
             for (long sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++) {
-                int violations = DesignSampler.sampleViolations(deltaCount, SEED, sampleIndex);
+                int violations = NaiveViolationSampler.sampleViolations(deltaCount, SEED, sampleIndex);
                 if (violations < bestViolations) {
                     bestViolations = violations;
                 }

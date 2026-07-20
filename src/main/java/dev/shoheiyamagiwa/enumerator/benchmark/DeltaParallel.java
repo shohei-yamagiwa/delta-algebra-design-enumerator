@@ -8,7 +8,7 @@ import java.util.concurrent.Future;
 
 public class DeltaParallel {
     public static Accumulator serial(int deltaCount, long seed, long sampleCount) {
-        Sampler sampler = new Sampler(deltaCount);
+        ViolationSampler sampler = new ViolationSampler(deltaCount);
         Accumulator accumulator = new Accumulator();
 
         for (long sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++) {
@@ -28,7 +28,7 @@ public class DeltaParallel {
             final long lastSampleIndexExclusive = Math.min(sampleCount, firstSampleIndex + samplesPerThread);
 
             futures.add(threadPool.submit(() -> {
-                Sampler sampler = new Sampler(deltaCount);
+                ViolationSampler sampler = new ViolationSampler(deltaCount);
                 Accumulator accumulator = new Accumulator();
 
                 for (long sampleIndex = firstSampleIndex; sampleIndex < lastSampleIndexExclusive; sampleIndex++) {

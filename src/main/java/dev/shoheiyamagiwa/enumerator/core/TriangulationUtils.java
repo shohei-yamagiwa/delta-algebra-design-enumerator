@@ -7,7 +7,7 @@ import java.util.TreeSet;
 
 /**
  * Shared triangulation utilities used by both {@link DesignEnumerator} and
- * {@code dev.shoheiyamagiwa.enumerator.benchmark.DesignSampler}: recursive triangulation
+ * {@code dev.shoheiyamagiwa.enumerator.benchmark.RemyTriangulationSampler}: recursive triangulation
  * enumeration, boundary-edge detection, and diagonal/ear extraction.
  * Consolidating this logic here avoids the two classes drifting apart when one of them is changed.
  */

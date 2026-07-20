@@ -23,13 +23,13 @@ public class FastPathEquivalenceTest {
     private static final long SEED = 12345L;
 
     @Test
-    @DisplayName("ゼロアロケーションの Sampler が遅い基準の DesignSampler と標本ごとに一致する")
-    public void samplerMatchesDesignSamplerPerSample() {
+    @DisplayName("ゼロアロケーションの ViolationSampler が遅い基準の NaiveViolationSampler と標本ごとに一致する")
+    public void samplerMatchesNaiveViolationSamplerPerSample() {
         for (int deltaCount = 2; deltaCount <= 12; deltaCount++) {
-            Sampler sampler = new Sampler(deltaCount);
+            ViolationSampler sampler = new ViolationSampler(deltaCount);
 
             for (long sampleIndex = 0; sampleIndex < 200; sampleIndex++) {
-                assertEquals(DesignSampler.sampleViolations(deltaCount, SEED, sampleIndex), sampler.eval(deltaCount, SEED, sampleIndex),
+                assertEquals(NaiveViolationSampler.sampleViolations(deltaCount, SEED, sampleIndex), sampler.eval(deltaCount, SEED, sampleIndex),
                         "n=" + deltaCount + " sample=" + sampleIndex);
             }
         }
@@ -71,7 +71,7 @@ public class FastPathEquivalenceTest {
     @DisplayName("二つの独立な全列挙実装が同じ厳密解を返す")
     public void bothExactEnumerationsAgree() {
         for (int deltaCount = 2; deltaCount <= 8; deltaCount++) {
-            long[] expected = DesignSampler.exact(deltaCount); // {minViolations, satisfying, total}
+            long[] expected = ExactDesignEvaluator.exact(deltaCount); // {minViolations, satisfying, total}
             Result actual = DesignEnumerator.enumerate(polygonOf(deltaCount), DesignEvaluator.STANDARD);
 
             assertEquals(expected[2], actual.getTotalDesignCount(), "total designs (n=" + deltaCount + ")");

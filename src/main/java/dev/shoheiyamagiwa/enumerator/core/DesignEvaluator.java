@@ -39,7 +39,7 @@ public interface DesignEvaluator {
      * Computes the standard violation count from already-extracted parts, without needing a
      * {@link Polygon}/{@link Triangulation} instance. This is the single source of truth for the
      * standard violation formula, reused by {@link #STANDARD} as well as by callers (such as
-     * {@code DesignSampler}) that only have the diagonal-direction popcount and ear count at hand.
+     * {@code NaiveViolationSampler}) that only have the diagonal-direction popcount and ear count at hand.
      *
      * @param setDirectionBits the number of diagonals whose direction bit is set
      * @param ears             the ear count of the triangulation

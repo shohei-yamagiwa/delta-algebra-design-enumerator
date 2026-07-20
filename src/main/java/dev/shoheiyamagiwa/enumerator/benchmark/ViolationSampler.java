@@ -4,16 +4,17 @@ import dev.shoheiyamagiwa.enumerator.core.DesignEvaluator;
 import dev.shoheiyamagiwa.enumerator.core.TriangulationUtils;
 
 /**
- * Zero-allocation, reusable-buffer counterpart of {@link DesignSampler}'s Rémy-tree sampling, used
- * by {@link DeltaParallel} for high-throughput (parallel) benchmarking. Its Rémy-tree construction
- * and ear-counting recursion intentionally duplicate the algorithms in {@link DesignSampler} and
- * {@link TriangulationUtils}: unlike those, this class reuses pre-allocated instance arrays across
- * calls to {@link #eval} (instead of allocating a fresh {@code List}/arrays per sample), which is
+ * Zero-allocation, reusable-buffer counterpart of {@link RemyTriangulationSampler}'s Rémy-tree
+ * sampling, used by {@link DeltaParallel} for high-throughput (parallel) benchmarking. Its Rémy-tree
+ * construction and ear-counting recursion intentionally duplicate the algorithms in
+ * {@link RemyTriangulationSampler} and {@link TriangulationUtils}: unlike those, this class reuses
+ * pre-allocated instance arrays across calls to {@link #eval} (instead of allocating a fresh
+ * {@code List}/arrays per sample), which is
  * the whole point of this class on the hot sampling path. The RNG mixing step and
  * the boundary-edge test have no such allocation concern, so they simply delegate
  * to {@link SplitMix64#mix64} and {@link TriangulationUtils#isBoundary} respectively.
  */
-public class Sampler {
+public class ViolationSampler {
     private static final long GAMMA_INCREMENT = 0x9E3779B97F4A7C15L;
 
     private final int[] leftChild;
@@ -25,7 +26,7 @@ public class Sampler {
     private final boolean[] internal;
     private int earCount;
 
-    public Sampler(int maxDeltaCount) {
+    public ViolationSampler(int maxDeltaCount) {
         int maxNodeCount = 2 * maxDeltaCount + 1;
 
         leftChild = new int[maxNodeCount];
@@ -124,7 +125,7 @@ public class Sampler {
         return DesignEvaluator.violations(setDirectionBits, ears);
     }
 
-    int leafCount(int node) {
+    public int leafCount(int node) {
         if (node == -1) {
             return 0;
         }
@@ -149,7 +150,7 @@ public class Sampler {
      *                    boundary test has to recognise the closing edge (0, vertexCount-1), which a
      *                    local arc cannot tell apart from a diagonal
      */
-    void countEars(int node, int arcStart, int arcEnd, int vertexCount) {
+    public void countEars(int node, int arcStart, int arcEnd, int vertexCount) {
         if (node == -1 || !internal[node]) {
             return;
         }

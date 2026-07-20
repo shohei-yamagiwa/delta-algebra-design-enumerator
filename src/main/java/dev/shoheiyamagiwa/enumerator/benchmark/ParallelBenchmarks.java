@@ -3,7 +3,7 @@ package dev.shoheiyamagiwa.enumerator.benchmark;
 import java.util.Arrays;
 
 /**
- * Benchmarks about parallelizing the zero-allocation {@link Sampler}-based sampling loop (see
+ * Benchmarks about parallelizing the zero-allocation {@link ViolationSampler}-based sampling loop (see
  * {@link DeltaParallel}): correctness of the multicore path against the serial one, and how well it
  * scales with the number of threads.
  */
@@ -27,7 +27,7 @@ public class ParallelBenchmarks {
 
     /**
      * Checks that the zero-allocation sampling path reproduces the reference satisfaction-fraction
-     * number previously obtained from {@link DesignSampler} at n=6.
+     * number previously obtained from {@link NaiveViolationSampler} at n=6.
      */
     private static void checkReproducesReferenceNumbers() {
         System.out.println("== zero-alloc reproduces reference numbers ==");
