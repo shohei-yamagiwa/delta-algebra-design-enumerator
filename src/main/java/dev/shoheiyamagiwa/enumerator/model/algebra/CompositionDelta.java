@@ -81,7 +81,11 @@ public class CompositionDelta implements Delta {
         // Definition ref
         Reference newDefRef = that.defRef();
 
-        return new CompositionDelta(newUseRefs, newDefRef, newSharedRefs);
+        CompositionDelta composedDelta = new CompositionDelta(newUseRefs, newDefRef, newSharedRefs);
+        composedDelta.deltas().addAll(this.deltas());
+        composedDelta.deltas().add(that);
+
+        return composedDelta;
     }
 
     private CompositionDelta combine(CompositionDelta that) {
@@ -129,7 +133,11 @@ public class CompositionDelta implements Delta {
         // Definition ref
         Reference newDefRef = that.defRef();
 
-        return new CompositionDelta(newUseRefs, newDefRef, newSharedRefs);
+        CompositionDelta composedDelta = new CompositionDelta(newUseRefs, newDefRef, newSharedRefs);
+        composedDelta.deltas().addAll(this.deltas());
+        composedDelta.deltas().addAll(that.deltas());
+
+        return composedDelta;
     }
 
     @Override
@@ -262,5 +270,17 @@ public class CompositionDelta implements Delta {
     @Override
     public Reference defRef() {
         return defRef;
+    }
+
+    @Override
+    public Set<Class> classes() {
+        Set<Class> classes = new HashSet<>();
+
+        for (Reference boundaryRef : boundaries()) {
+            classes.add(boundaryRef.getTarget());
+            classes.add(boundaryRef.getTarget());
+        }
+
+        return classes;
     }
 }

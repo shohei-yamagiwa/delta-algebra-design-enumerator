@@ -1,5 +1,6 @@
 package dev.shoheiyamagiwa.enumerator.model.algebra;
 
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.SequencedSet;
 import java.util.Set;
@@ -69,7 +70,11 @@ public class PrimitiveDelta implements Delta {
         // Definition ref
         Reference defRef = that.defRef();
 
-        return new CompositionDelta(useRefs, defRef, sharedRefs);
+        CompositionDelta composedDelta = new CompositionDelta(useRefs, defRef, sharedRefs);
+        composedDelta.deltas().add(this);
+        composedDelta.deltas().add(that);
+
+        return composedDelta;
     }
 
     private CompositionDelta combine(CompositionDelta that) {
@@ -118,7 +123,11 @@ public class PrimitiveDelta implements Delta {
         // Definition ref
         Reference defRef = that.defRef();
 
-        return new CompositionDelta(useRefs, defRef, sharedRefs);
+        CompositionDelta composedDelta = new CompositionDelta(useRefs, defRef, sharedRefs);
+        composedDelta.deltas().add(this);
+        composedDelta.deltas().addAll(that.deltas());
+
+        return composedDelta;
     }
 
     @Override
@@ -149,5 +158,17 @@ public class PrimitiveDelta implements Delta {
     @Override
     public Reference defRef() {
         return defRef;
+    }
+
+    @Override
+    public Set<Class> classes() {
+        Set<Class> classes = new HashSet<>();
+
+        for (Reference boundaryRef : boundaries()) {
+            classes.add(boundaryRef.getTarget());
+            classes.add(boundaryRef.getTarget());
+        }
+
+        return classes;
     }
 }

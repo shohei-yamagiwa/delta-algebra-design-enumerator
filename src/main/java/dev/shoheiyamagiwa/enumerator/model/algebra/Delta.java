@@ -12,4 +12,6 @@ public interface Delta {
     Set<Reference> useRefs();
 
     Reference defRef();
+
+    Set<Class> classes();
 }
