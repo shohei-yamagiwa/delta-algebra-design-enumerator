@@ -83,7 +83,5 @@ public class ParallelBenchmarks {
 
             System.out.printf("%-8d %-12.1f %-10.2f %-12.2f%n", t, ms, base / ms, (base / ms) / t);
         }
-
-        System.out.println("\n(On this 1-core container speedup stays ~1x; run on the ARM64 laptop for real scaling.)");
     }
 }

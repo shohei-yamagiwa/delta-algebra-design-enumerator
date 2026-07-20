@@ -111,7 +111,6 @@ public class TriangulationSanityChecks {
             names[i] = "C" + i;
             refs[i] = new RefEdge("e" + i, i, (i + 1) % k, (i % 2 == 0));
         }
-
         return new Polygon(names, refs);
     }
 
@@ -127,7 +126,6 @@ public class TriangulationSanityChecks {
         for (int i = 0; i < n; i++) {
             c = c * 2 * (2L * i + 1) / (i + 2);
         }
-
         return c;
     }
 }

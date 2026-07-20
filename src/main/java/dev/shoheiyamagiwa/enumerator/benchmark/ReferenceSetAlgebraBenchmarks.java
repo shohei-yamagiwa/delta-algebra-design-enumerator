@@ -71,13 +71,6 @@ public class ReferenceSetAlgebraBenchmarks {
                     scalarNanosPerOp / vectorNanosPerOp, correct ? "OK" : "MISMATCH",
                     (checksum == Long.MIN_VALUE) ? " " : "");
         }
-
-        System.out.println("\nHonest notes for the report:");
-        System.out.println(" - The scalar long[] loop is itself auto-vectorized by C2; for a fair");
-        System.out.println("   'un-vectorized baseline' run it with -XX:-UseSuperWord.");
-        System.out.println(" - On NEON (2 lanes) the ceiling for long-wise ops is ~2x; the speedup");
-        System.out.println("   grows with referenceCount as the loop becomes compute-bound.");
-        System.out.println(" - Take final numbers with JMH (warmup separated, dead-code elimination guarded).");
     }
 
     /**

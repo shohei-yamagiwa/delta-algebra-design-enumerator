@@ -119,8 +119,5 @@ public class SamplingBenchmarks {
 
             System.out.printf("%-6d %-12d %-12.1f %-14d %-14.3e  (satisfying found: %d)%n", n, S3, ms, best, S3 / (ms / 1000.0), satFound);
         }
-
-        System.out.println("\nNote: at large n, uniform samples almost never hit a satisfying design");
-        System.out.println("(they are astronomically rare) -> motivates guided/importance sampling as future work.");
     }
 }
