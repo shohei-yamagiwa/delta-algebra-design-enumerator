@@ -13,7 +13,7 @@ import java.util.*;
 import static dev.shoheiyamagiwa.enumerator.core.DesignEnumerator.triangulations;
 
 public class Benchmark {
-    static void main() {
+    static void main() throws Exception {
         // (1) sanity: triangulation count must equal Catalan(n)
         System.out.println("== triangulation count vs Catalan ==");
 
@@ -137,6 +137,55 @@ public class Benchmark {
 
         System.out.println("\nNote: at large n, uniform samples almost never hit a satisfying design");
         System.out.println("(they are astronomically rare) -> motivates guided/importance sampling as future work.");
+
+        benchmarkParallel();
+    }
+
+    private static void benchmarkParallel() throws Exception {
+        long seed = 12345L;
+        int cores = Runtime.getRuntime().availableProcessors();
+
+        System.out.println("availableProcessors = " + cores + "\n");
+
+        // (1) zero-alloc path reproduces DeltaSampler numbers (sat fraction @ n=6)
+        System.out.println("== zero-alloc reproduces reference numbers ==");
+
+        Acc chk = DeltaParallel.serial(6, seed, 2_000_000);
+
+        System.out.printf("n=6  satFrac(est)=%.6f  (DeltaSampler gave 0.015125)  best=%d%n%n", (double) chk.sat / 2_000_000, chk.best);
+
+        // (2) multicore == serial (determinism / correctness)
+        System.out.println("== multicore result == serial result ==");
+
+        int nC = 60;
+        long Sc = 300_000;
+        Acc s1 = DeltaParallel.serial(nC, seed, Sc);
+        Acc s8 = DeltaParallel.parallel(nC, seed, Sc, 8);
+        boolean same = (s1.best == s8.best) && (s1.sat == s8.sat) && Arrays.equals(s1.hist, s8.hist);
+
+        System.out.printf("n=%d S=%d : serial(best=%d,sat=%d) vs 8-thread(best=%d,sat=%d) -> %s%n%n", nC, Sc, s1.best, s1.sat, s8.best, s8.sat, same ? "IDENTICAL" : "MISMATCH");
+
+        // (3) strong-scaling harness (meaningful on multi-core hardware)
+        System.out.println("== strong scaling (n=" + nC + ", S=" + Sc + ") ==");
+        System.out.printf("%-8s %-12s %-10s %-12s%n", "threads", "time(ms)", "speedup", "efficiency");
+
+        double base = -1;
+
+        for (int t : new int[]{1, 2, 4, 8}) {
+            long t0 = System.nanoTime();
+
+            DeltaParallel.parallel(nC, seed, Sc, t);
+
+            double ms = (System.nanoTime() - t0) / 1e6;
+
+            if (base < 0) {
+                base = ms;
+            }
+
+            System.out.printf("%-8d %-12.1f %-10.2f %-12.2f%n", t, ms, base / ms, (base / ms) / t);
+        }
+
+        System.out.println("\n(On this 1-core container speedup stays ~1x; run on the ARM64 laptop for real scaling.)");
     }
 
     private static Polygon clockApp() {
