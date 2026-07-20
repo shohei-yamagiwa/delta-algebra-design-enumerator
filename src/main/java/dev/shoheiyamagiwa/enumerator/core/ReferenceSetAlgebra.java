@@ -15,11 +15,7 @@ public class ReferenceSetAlgebra {
      * Scalar composition of two reference-set-based deltas.
      * Reproduces CompositionDelta#combine's set algebra on a bitset representation.
      */
-    public static void composeScalar(
-            long[] useBits1, long[] defBits1,
-            long[] useBits2, long[] defBits2,
-            long[] outputUseBits, long[] outputDefBits) {
-
+    public static void composeScalar(long[] useBits1, long[] defBits1, long[] useBits2, long[] defBits2, long[] outputUseBits, long[] outputDefBits) {
         int wordCount = useBits1.length;
         for (int wordIndex = 0; wordIndex < wordCount; wordIndex++) {
             outputUseBits[wordIndex] = (useBits1[wordIndex] | useBits2[wordIndex]) & ~defBits1[wordIndex];
