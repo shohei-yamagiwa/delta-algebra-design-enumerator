@@ -2,6 +2,7 @@
   <configuration default="false" name="Benchmark" type="Application" factoryName="Application">
     <option name="MAIN_CLASS_NAME" value="dev.shoheiyamagiwa.enumerator.benchmark.Benchmark" />
     <module name="delta-algebra-design-enumerator" />
+    <option name="VM_PARAMETERS" value="--add-modules jdk.incubator.vector" />
     <method v="2">
       <option name="Make" enabled="true" />
     </method>

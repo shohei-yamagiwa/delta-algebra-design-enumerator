@@ -10,7 +10,7 @@ public class DeltaDesignEvaluator {
     /**
      * Evaluate if the given Delta satisfies the law of Demeter.
      *
-     * @param compositionDelta The delta to be evaluated
+     * @param delta The delta to be evaluated
      * @return The number of violations of the law of Demeter
      */
     public static long evaluateLawOfDemeter(Delta delta) {
