@@ -7,9 +7,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 public class DeltaParallel {
-    public static Acc serial(int deltaCount, long seed, long sampleCount) {
+    public static Accumulator serial(int deltaCount, long seed, long sampleCount) {
         Sampler sampler = new Sampler(deltaCount);
-        Acc accumulator = new Acc();
+        Accumulator accumulator = new Accumulator();
 
         for (long sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++) {
             reduce(accumulator, sampler.eval(deltaCount, seed, sampleIndex));
@@ -18,9 +18,9 @@ public class DeltaParallel {
         return accumulator;
     }
 
-    public static Acc parallel(int deltaCount, long seed, long sampleCount, int threadCount) throws Exception {
+    public static Accumulator parallel(int deltaCount, long seed, long sampleCount, int threadCount) throws Exception {
         ExecutorService threadPool = Executors.newFixedThreadPool(threadCount);
-        List<Future<Acc>> futures = new ArrayList<>();
+        List<Future<Accumulator>> futures = new ArrayList<>();
         long samplesPerThread = (sampleCount + threadCount - 1) / threadCount;
 
         for (int threadIndex = 0; threadIndex < threadCount; threadIndex++) {
@@ -29,7 +29,7 @@ public class DeltaParallel {
 
             futures.add(threadPool.submit(() -> {
                 Sampler sampler = new Sampler(deltaCount);
-                Acc accumulator = new Acc();
+                Accumulator accumulator = new Accumulator();
 
                 for (long sampleIndex = firstSampleIndex; sampleIndex < lastSampleIndexExclusive; sampleIndex++) {
                     reduce(accumulator, sampler.eval(deltaCount, seed, sampleIndex));
@@ -39,9 +39,9 @@ public class DeltaParallel {
             }));
         }
 
-        Acc combinedAccumulator = new Acc();
+        Accumulator combinedAccumulator = new Accumulator();
 
-        for (Future<Acc> future : futures) {
+        for (Future<Accumulator> future : futures) {
             merge(combinedAccumulator, future.get());
         }
 
@@ -50,7 +50,7 @@ public class DeltaParallel {
         return combinedAccumulator;
     }
 
-    private static void reduce(Acc accumulator, int violationCount) {
+    private static void reduce(Accumulator accumulator, int violationCount) {
         if (violationCount < accumulator.bestViolationCount) {
             accumulator.bestViolationCount = violationCount;
         }
@@ -59,14 +59,14 @@ public class DeltaParallel {
             accumulator.satisfyingCount++;
         }
 
-        accumulator.violationHistogram[Math.clamp(violationCount, 0, Acc.HISTOGRAM_CAPACITY - 1)]++;
+        accumulator.violationHistogram[Math.clamp(violationCount, 0, Accumulator.HISTOGRAM_CAPACITY - 1)]++;
     }
 
-    private static void merge(Acc target, Acc source) {
+    private static void merge(Accumulator target, Accumulator source) {
         target.bestViolationCount = Math.min(target.bestViolationCount, source.bestViolationCount);
         target.satisfyingCount += source.satisfyingCount;
 
-        for (int bucketIndex = 0; bucketIndex < Acc.HISTOGRAM_CAPACITY; bucketIndex++) {
+        for (int bucketIndex = 0; bucketIndex < Accumulator.HISTOGRAM_CAPACITY; bucketIndex++) {
             target.violationHistogram[bucketIndex] += source.violationHistogram[bucketIndex];
         }
     }

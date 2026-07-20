@@ -40,10 +40,10 @@ public class FastPathEquivalenceTest {
     public void parallelMatchesSerial() throws Exception {
         int deltaCount = 20;
         long sampleCount = 50_000;
-        Acc serialResult = DeltaParallel.serial(deltaCount, SEED, sampleCount);
+        Accumulator serialResult = DeltaParallel.serial(deltaCount, SEED, sampleCount);
 
         for (int threadCount : new int[]{2, 3, 4, 8}) {
-            Acc parallelResult = DeltaParallel.parallel(deltaCount, SEED, sampleCount, threadCount);
+            Accumulator parallelResult = DeltaParallel.parallel(deltaCount, SEED, sampleCount, threadCount);
 
             assertEquals(serialResult.bestViolationCount, parallelResult.bestViolationCount, "best (threads=" + threadCount + ")");
             assertEquals(serialResult.satisfyingCount, parallelResult.satisfyingCount, "sat (threads=" + threadCount + ")");
@@ -56,10 +56,10 @@ public class FastPathEquivalenceTest {
     public void parallelMatchesSerialOnUnevenChunks() throws Exception {
         int deltaCount = 8;
         long sampleCount = 9_973; // prime: never divides evenly by the thread counts below
-        Acc serialResult = DeltaParallel.serial(deltaCount, SEED, sampleCount);
+        Accumulator serialResult = DeltaParallel.serial(deltaCount, SEED, sampleCount);
 
         for (int threadCount : new int[]{3, 7, 12}) {
-            Acc parallelResult = DeltaParallel.parallel(deltaCount, SEED, sampleCount, threadCount);
+            Accumulator parallelResult = DeltaParallel.parallel(deltaCount, SEED, sampleCount, threadCount);
 
             assertEquals(serialResult.satisfyingCount, parallelResult.satisfyingCount, "sat (threads=" + threadCount + ")");
             assertArrayEquals(serialResult.violationHistogram, parallelResult.violationHistogram, "hist (threads=" + threadCount + ")");

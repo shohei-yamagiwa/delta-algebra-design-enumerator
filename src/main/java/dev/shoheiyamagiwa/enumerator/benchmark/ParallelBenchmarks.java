@@ -33,7 +33,7 @@ public class ParallelBenchmarks {
         System.out.println("== zero-alloc reproduces reference numbers ==");
 
         long sampleCount = 2_000_000;
-        Acc accumulator = DeltaParallel.serial(6, SEED, sampleCount);
+        Accumulator accumulator = DeltaParallel.serial(6, SEED, sampleCount);
 
         System.out.printf("n=6  satFrac(est)=%.6f  (DeltaSampler gave 0.015125)  best=%d%n%n",
                 (double) accumulator.satisfyingCount / sampleCount, accumulator.bestViolationCount);
@@ -50,8 +50,8 @@ public class ParallelBenchmarks {
 
         int deltaCount = 60;
         long sampleCount = 300_000;
-        Acc serialResult = DeltaParallel.serial(deltaCount, SEED, sampleCount);
-        Acc parallelResult = DeltaParallel.parallel(deltaCount, SEED, sampleCount, 8);
+        Accumulator serialResult = DeltaParallel.serial(deltaCount, SEED, sampleCount);
+        Accumulator parallelResult = DeltaParallel.parallel(deltaCount, SEED, sampleCount, 8);
         boolean identical = (serialResult.bestViolationCount == parallelResult.bestViolationCount)
                 && (serialResult.satisfyingCount == parallelResult.satisfyingCount)
                 && Arrays.equals(serialResult.violationHistogram, parallelResult.violationHistogram);
