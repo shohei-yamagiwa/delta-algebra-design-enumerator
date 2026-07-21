@@ -9,7 +9,7 @@ package dev.shoheiyamagiwa.enumerator.benchmark;
 public class Benchmark {
     static void main() throws Exception {
         TriangulationSanityChecks.run();
-//        SamplingBenchmarks.run();
+        SamplingBenchmarks.run();
         ParallelBenchmarks.run();
         ReferenceSetAlgebraBenchmarks.run();
     }
